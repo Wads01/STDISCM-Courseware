@@ -1,0 +1,70 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+*.exe
+*.dll
+*.lib
+*.pdb
+*.ipch
+*.iobj
+*.log
+*.suo
+*.sdf
+*.cache
+*.dbmdl
+*.VC.db
+*.VC.VC.opendb
+
+# User-specific files
+*.user
+*.userosscache
+*.sln.docstates
+*.VC.db
+*.VC.opendb
+
+# Visual Studio Code workspace
+.vscode/
+
+# CMake build folders (if used)
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CTestTestfile.cmake
+Makefile
+
+# NuGet packages
+*.nupkg
+packages/
+
+# Others
+*.tlog
+*.lastbuildstate
+*.idb
+*.ipdb
+*.opensdf
+*.psess
+*.vsp
+*.vspscc
+*.vssscc
+*.cachefile
+
+# Visual Studio folder
+.vs/
+
+# Crash dumps
+*.mdmp
+
+# Backup & temporary files
+*~
+*.tmp
+*.bak
+*.swp
+
+# Solution-specific
+*.suo
+*.ntvs_analysis.dat
+*.ncb
+*.aps
+*.plg
+*.pyc
