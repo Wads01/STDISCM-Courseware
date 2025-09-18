@@ -28,7 +28,7 @@ List GameObjectManager::getAllObjects() {
 }
 
 int GameObjectManager::activeObjects() {
-	return gameObjectList.size();
+	return (int)gameObjectList.size();
 }
 
 void GameObjectManager::processInput(sf::Event event) {

@@ -6,11 +6,12 @@
 FPSCounter::FPSCounter() : AGameObject("FPSCounter") {}
 
 void FPSCounter::initialize() {
-    if (!font.openFromFile("Media/Sansation.ttf")) {
+    if (!font.openFromFile("../Media/Sansation.ttf")) {
         std::cerr << "Failed to load font\n";
+        return;
     }
 
-    statsText.emplace(std::string("FPS: --\n"), font, 35);
+    statsText.emplace(font, std::string("FPS: --\n"), 35u);
     statsText->setPosition(sf::Vector2f(BaseRunner::WINDOW_WIDTH - 150, BaseRunner::WINDOW_HEIGHT - 70));
     statsText->setOutlineColor(sf::Color(255, 255, 255));
     statsText->setOutlineThickness(2.5f);

@@ -2,11 +2,17 @@
 
 AGameObject::AGameObject(String name) {
 	this->name = name;
+	this->sprite = nullptr;
+	this->texture = nullptr;
 }
 
 AGameObject::~AGameObject() {
-	delete sprite;
-	delete texture;
+	if (sprite != nullptr) {
+		delete sprite;
+	}
+	if (texture != nullptr) {
+		delete texture;
+	}
 }
 
 AGameObject::String AGameObject::getName() {
@@ -35,13 +41,22 @@ void AGameObject::setScale(const sf::Vector2f& scale) {
 }
 
 sf::Vector2f AGameObject::getPosition() {
-	return sprite->getPosition();
+	if (sprite != nullptr) {
+		return sprite->getPosition();
+	}
+	return position;
 }
 
 sf::Vector2f AGameObject::getScale() {
-	return sprite->getScale();
+	if (sprite != nullptr) {
+		return sprite->getScale();
+	}
+	return scale;
 }
 
 sf::FloatRect AGameObject::getLocalBounds() {
-	return sprite->getLocalBounds();
+	if (sprite != nullptr) {
+		return sprite->getLocalBounds();
+	}
+	return sf::FloatRect();
 }

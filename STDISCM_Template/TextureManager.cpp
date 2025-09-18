@@ -23,7 +23,12 @@ TextureManager::TextureManager() {
 
 void TextureManager::loadFromAssetList() {
 	std::cout << "[TextureManager] Reading from asset list" << std::endl;
-	std::ifstream stream("Media/assets.txt");
+	std::ifstream stream("../Media/assets.txt");
+	if (!stream.is_open()) {
+		std::cerr << "[TextureManager] Failed to open assets.txt" << std::endl;
+		return;
+	}
+	
 	String path;
 
 	while (std::getline(stream, path)) {
@@ -36,6 +41,11 @@ void TextureManager::loadFromAssetList() {
 
 void TextureManager::loadSingleStreamAsset(int index) {
 	int fileNum = 0;
+
+	if (!std::filesystem::exists(STREAMING_PATH)) {
+		std::cerr << "[TextureManager] Streaming directory does not exist: " << STREAMING_PATH << std::endl;
+		return;
+	}
 
 	for (const auto& entry : std::filesystem::directory_iterator(STREAMING_PATH)) {
 		if (index == fileNum)
@@ -67,7 +77,7 @@ sf::Texture* TextureManager::getFromTextureMap(const String assetName, int frame
 
 int TextureManager::getNumFrames(const String assetName) {
 	if (!textureMap[assetName].empty()) {
-		return textureMap[assetName].size();
+		return (int)textureMap[assetName].size();
 	}
 	else {
 		std::cout << "[TextureManager] No texture found for " << assetName << std::endl;
@@ -80,11 +90,18 @@ sf::Texture* TextureManager::getStreamTextureFromList(const int index) {
 }
 
 int TextureManager::getNumLoadedStreamTextures() const {
-	return streamTextureList.size();
+	return (int)streamTextureList.size();
 }
 
 void TextureManager::countStreamingAssets() {
 	streamingAssetCount = 0;
+	
+	// Check if directory exists before counting
+	if (!std::filesystem::exists(STREAMING_PATH)) {
+		std::cerr << "[TextureManager] Streaming directory does not exist: " << STREAMING_PATH << std::endl;
+		return;
+	}
+	
 	for (const auto& entry : std::filesystem::directory_iterator(STREAMING_PATH)) {
 		streamingAssetCount++;
 	}

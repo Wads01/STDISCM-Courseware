@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include "TextureDisplay.hpp"
 #include "TextureManager.hpp"
@@ -19,7 +20,7 @@ void TextureDisplay::update(sf::Time deltaTime) {
 }
 
 void TextureDisplay::spawnObject() {
-	String objectName = "Icon_" + to_string(this->iconList.size());
+	String objectName = "Icon_" + std::to_string(this->iconList.size());
 	IconObject* iconObj = new IconObject(objectName, this->iconList.size());
 	this->iconList.push_back(iconObj);
 

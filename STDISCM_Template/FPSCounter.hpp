@@ -6,6 +6,7 @@ class FPSCounter : public AGameObject {
 public:
 	FPSCounter();
 	~FPSCounter() = default;
+
 	void initialize() override;
 	void processInput(sf::Event event) override;
 	void update(sf::Time deltaTime) override;

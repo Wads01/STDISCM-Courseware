@@ -11,12 +11,12 @@
 const sf::Time BaseRunner::TIME_PER_FRAME = sf::seconds(1.f / 60.f);
 
 BaseRunner::BaseRunner() :
-	window(sf::VideoMode(sf::Vector2u(WINDOW_WIDTH, WINDOW_HEIGHT)), "HO: Entity Component", sf::Style::Close) {
+	window(sf::VideoMode(sf::Vector2u(WINDOW_WIDTH, WINDOW_HEIGHT)), "Template Program", sf::Style::Close) {
 	//load initial textures
 	TextureManager::getInstance()->loadFromAssetList();
 
 	//load objects
-	BGObject* bgObject = new BGObject("BGObject");
+	BGObject* bgObject = new BGObject();
 	GameObjectManager::getInstance()->addObject(bgObject);
 
 	TextureDisplay* display = new TextureDisplay();

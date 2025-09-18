@@ -1,6 +1,7 @@
 #pragma once
 
 #include "AGameObject.hpp"
+#include <vector>
 
 class IconObject;
 /// <summary>
@@ -9,10 +10,11 @@ class IconObject;
 class TextureDisplay : public AGameObject {
 public:
 	TextureDisplay();
+	~TextureDisplay() = default;
 
-	void initialize();
-	void processInput(sf::Event event);
-	void update(sf::Time deltaTime);
+	void initialize() override;
+	void processInput(sf::Event event) override;
+	void update(sf::Time deltaTime) override;
 
 private:
 	typedef std::vector<IconObject*> IconList;

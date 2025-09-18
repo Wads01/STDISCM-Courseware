@@ -4,7 +4,7 @@
 #include "TextureManager.hpp"
 #include "BaseRunner.hpp"
 
-BGObject::BGObject(string name) : AGameObject(name) {}
+BGObject::BGObject() : AGameObject("BGObject") {}
 
 void BGObject::initialize() {
 	std::cout << "Declared as " << this->getName() << "\n";
