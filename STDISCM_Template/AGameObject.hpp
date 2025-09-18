@@ -31,6 +31,6 @@ protected:
 	sf::Texture* texture;
 
 	sf::Vector2f position{ 0.0f, 0.0f };
-	sf::Vector2f scale{ 0.0f, 0.0f };
+	sf::Vector2f scale{ 1.0f, 1.0f };
 };
 

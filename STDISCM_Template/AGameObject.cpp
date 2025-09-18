@@ -21,7 +21,6 @@ AGameObject::String AGameObject::getName() {
 
 void AGameObject::draw(sf::RenderWindow* targetWindow) {
 	if (sprite != NULL) {
-		sprite->setPosition(position);
 		sprite->setScale(scale);
 		targetWindow->draw(*sprite);
 	}
@@ -29,6 +28,7 @@ void AGameObject::draw(sf::RenderWindow* targetWindow) {
 
 //must be called after being registered to the game object manager or one of the parent game objects
 void AGameObject::setPosition(const sf::Vector2f& position) {
+	this->position = position;
 	if (sprite != nullptr) {
 		sprite->setPosition(position);
 	}

@@ -12,7 +12,7 @@ void FPSCounter::initialize() {
     }
 
     statsText.emplace(font, std::string("FPS: --\n"), 35u);
-    statsText->setPosition(sf::Vector2f(BaseRunner::WINDOW_WIDTH - 150, BaseRunner::WINDOW_HEIGHT - 70));
+    statsText->setPosition(sf::Vector2f(BaseRunner::WINDOW_WIDTH - 175, BaseRunner::WINDOW_HEIGHT - 70));
     statsText->setOutlineColor(sf::Color(255, 255, 255));
     statsText->setOutlineThickness(2.5f);
 }
@@ -29,5 +29,16 @@ void FPSCounter::draw(sf::RenderWindow* targetWindow) {
 }
 
 void FPSCounter::updateFPS(sf::Time elapsedTime) {
-    if (statsText) statsText->setString("FPS: --\n");
+    static float timeAccumulator = 0.0f;
+    static int frameCount = 0;
+
+    timeAccumulator += elapsedTime.asSeconds();
+    frameCount++;
+
+    if (timeAccumulator >= 1.0f) {
+        int fps = static_cast<int>(frameCount / timeAccumulator + 0.5f);
+        if (statsText) statsText->setString("FPS: " + std::to_string(fps) + "\n");
+        timeAccumulator = 0.0f;
+        frameCount = 0;
+    }
 }

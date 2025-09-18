@@ -28,19 +28,12 @@ BaseRunner::BaseRunner() :
 
 void BaseRunner::run() {
 	sf::Clock clock;
-	sf::Time timeSinceLastUpdate = sf::Time::Zero;
 	while (this->window.isOpen())
 	{
-		sf::Time elapsedTime = clock.restart();
-		timeSinceLastUpdate += elapsedTime;
-		while (timeSinceLastUpdate > TIME_PER_FRAME)
-		{
-			timeSinceLastUpdate -= TIME_PER_FRAME;
+		processEvents();
 
-			processEvents();
-			//update(TIME_PER_FRAME);
-			update(elapsedTime);
-		}
+		sf::Time elapsedTime = clock.restart();
+		update(elapsedTime);
 
 		render();
 	}
