@@ -4,6 +4,7 @@
 #include <thread>
 #include <mutex>
 #include <condition_variable>
+#include <functional>
 
 #include "Algorithm.hpp"
 
@@ -11,7 +12,8 @@ class Worker {
 public:
 	Worker(int id);
 	~Worker();
-	void assignTask(Algorithm task);
+	void assignTask(std::function<void()> task);
+
 private:
 	void run();
 	int worker_id;
@@ -20,5 +22,5 @@ private:
 	std::condition_variable cv;
 	bool stop;
 
-	std::vector<Algorithm> tasks;
+	std::vector<std::function<void()>> tasks;
 };

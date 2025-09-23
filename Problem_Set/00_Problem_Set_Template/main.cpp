@@ -22,11 +22,6 @@ int main(int argc, char* argv[]) {
     
     TaskManager& manager = TaskManager::getInstance();
 
-    manager.addWorker();
-
-    Algorithm algo;
-    manager.assignTaskToWorker(0, algo);
-
     infile.close();
 
     return 0;

@@ -12,13 +12,13 @@ class TaskManager {
 public:
     static TaskManager& getInstance();
 
-    void addWorker();
-    void assignTaskToWorker(int workerIndex, const Algorithm& task);
-
     TaskManager(const TaskManager&) = delete;
     TaskManager& operator=(const TaskManager&) = delete;
     TaskManager(TaskManager&&) = delete;
     TaskManager& operator=(TaskManager&&) = delete;
+
+    void addWorker();
+    void assignTaskToWorker(int workerIndex, std::function<void()> task);
 
 private:
     TaskManager() = default;

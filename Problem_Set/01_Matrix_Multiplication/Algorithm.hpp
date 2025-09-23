@@ -18,4 +18,5 @@ public:
 	Matrix threadMatrixMultiply(const Matrix& A, const Matrix& B);
 private:
 	void createWorker();
+	double computeDotProduct(const Matrix& A, const Matrix& B, size_t i, size_t j);
 };

@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <random>
 #include <chrono>
+#include <iomanip>
 
 #include "TaskManager.hpp"
 
@@ -82,6 +83,7 @@ int main(int argc, char* argv[]) {
 
     // Write results to output.txt
     std::ofstream outfile("output.txt");
+    outfile << std::fixed << std::setprecision(1);
     for (const auto& row : matrixC) {
         for (const auto& val : row) {
             outfile << val << " ";

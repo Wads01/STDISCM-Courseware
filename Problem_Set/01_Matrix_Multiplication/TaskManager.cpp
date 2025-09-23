@@ -14,9 +14,9 @@ void TaskManager::addWorker() {
     workers.emplace_back(std::make_unique<Worker>(id));
 }
 
-void TaskManager::assignTaskToWorker(int workerIndex, const Algorithm& task) {
+void TaskManager::assignTaskToWorker(int workerIndex, std::function<void()> task) {
     if (workerIndex >= 0 && workerIndex < static_cast<int>(workers.size())) {
-        workers[workerIndex]->assignTask(task);
+        workers[workerIndex]->assignTask(std::move(task));
     }
 }
 

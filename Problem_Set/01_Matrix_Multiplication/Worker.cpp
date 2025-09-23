@@ -18,7 +18,7 @@ Worker::~Worker() {
     }
 }
 
-void Worker::assignTask(Algorithm task) {
+void Worker::assignTask(std::function<void()> task) {
     {
         std::lock_guard<std::mutex> lock(mtx);
         tasks.emplace_back(std::move(task));
@@ -28,7 +28,7 @@ void Worker::assignTask(Algorithm task) {
 
 void Worker::run() {
     while (true) {
-        Algorithm task;
+        std::function<void()> task;
         bool hasTask = false;
 
         {
@@ -45,7 +45,7 @@ void Worker::run() {
         }
 
         if (hasTask) {
-            task.execute();
+            task();
         }
     }
 }
