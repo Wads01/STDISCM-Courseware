@@ -11,5 +11,5 @@ public:
 	~Algorithm() = default;
 	void execute();
 private:
-	void createWorker();
+
 };

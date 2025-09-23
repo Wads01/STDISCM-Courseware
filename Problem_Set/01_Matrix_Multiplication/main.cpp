@@ -75,7 +75,7 @@ int main(int argc, char* argv[]) {
 
 	auto thread_start_time = std::chrono::steady_clock::now();
 
-	Matrix matrixD = algo.threadMatrixMultiply(matrixA, matrixB);
+	Matrix matrixD = algo.threadPerRow(matrixA, matrixB);
 
 	auto thread_end_time = std::chrono::steady_clock::now();
 
