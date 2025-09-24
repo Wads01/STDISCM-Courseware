@@ -9,9 +9,14 @@ IconObject::IconObject(String name, int textureIndex) : AGameObject(name) {
 }
 
 void IconObject::initialize() {
-	//assign texture
-	sf::Texture* texture = TextureManager::getInstance()->getStreamTextureFromList(textureIndex);
-	sprite = new sf::Sprite(*texture);
+    sf::Texture* texture = TextureManager::getInstance()->getStreamTextureFromList(textureIndex);
+    if (!texture) {
+        std::cerr << "IconObject: Failed to get stream texture for index " << textureIndex << std::endl;
+        return;
+    }
+    sprite = new sf::Sprite(*texture);
+
+    sprite->setPosition(this->position);
 }
 
 void IconObject::processInput(sf::Event event) {}

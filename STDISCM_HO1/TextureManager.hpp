@@ -21,6 +21,8 @@ public:
 	int getNumFrames(const String assetName);
 	int getNumLoadedStreamTextures() const;
 
+	int streamingAssetCount = 0;
+
 private:
 	TextureManager();
 	TextureManager(TextureManager const&) {};             // copy constructor is private
@@ -32,7 +34,6 @@ private:
 	TextureList streamTextureList;
 
 	const std::string STREAMING_PATH = "../Media/Streaming/";
-	int streamingAssetCount = 0;
 
 	void countStreamingAssets();
 	void instantiateAsTexture(String path, String assetName, bool isStreaming);
