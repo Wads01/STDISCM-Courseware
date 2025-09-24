@@ -17,8 +17,11 @@ public:
     TaskManager(TaskManager&&) = delete;
     TaskManager& operator=(TaskManager&&) = delete;
 
+    int getWorkerCount() const;
+
     void addWorker();
     void assignTaskToWorker(int workerIndex, std::function<void()> task);
+    void clearWorkers();
 
 private:
     TaskManager() = default;

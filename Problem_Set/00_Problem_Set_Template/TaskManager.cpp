@@ -9,6 +9,10 @@ TaskManager& TaskManager::getInstance() {
     return instance;
 }
 
+int TaskManager::getWorkerCount() const {
+    return static_cast<int>(workers.size());
+}
+
 void TaskManager::addWorker() {
     int id = generateRandomWorkerID();
     workers.emplace_back(std::make_unique<Worker>(id));
@@ -27,4 +31,9 @@ int TaskManager::generateRandomWorkerID() {
     } while (used_ids.find(id) != used_ids.end());
     used_ids.insert(id);
     return id;
+}
+
+void TaskManager::clearWorkers() {
+    workers.clear();
+    used_ids.clear();
 }

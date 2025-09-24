@@ -54,32 +54,35 @@ int main(int argc, char* argv[]) {
    
     infile.close();
 
-	TaskManager& manager = TaskManager::getInstance();
+    TaskManager& manager = TaskManager::getInstance();
 
     Algorithm algo;
 
-    
+    // Always clear workers before any threaded multiplication
+    manager.clearWorkers();
+
     // Start Time
     auto std_start_time = std::chrono::steady_clock::now();
 
     // Perform Matrix Multiplication
-	Matrix matrixC = algo.stdMatrixMultiply(matrixA, matrixB);
+    Matrix matrixC = algo.stdMatrixMultiply(matrixA, matrixB);
 
     // End Time
-	auto std_end_time = std::chrono::steady_clock::now();
+    auto std_end_time = std::chrono::steady_clock::now();
 
-	// Calculate Duration
-	auto std_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std_end_time - std_start_time).count();
+    // Calculate Duration
+    auto std_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std_end_time - std_start_time).count();
 
     // =============================================================================================================
 
-	auto thread_start_time = std::chrono::steady_clock::now();
+    manager.clearWorkers(); // Clear again before threaded run
+    auto thread_start_time = std::chrono::steady_clock::now();
 
-	Matrix matrixD = algo.threadPerRow(matrixA, matrixB);
+    Matrix matrixD = algo.threadLimitedWorkers(matrixA, matrixB);
 
-	auto thread_end_time = std::chrono::steady_clock::now();
+    auto thread_end_time = std::chrono::steady_clock::now();
 
-	auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
+    auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
 
     // Write results to output.txt
     std::ofstream outfile("output.txt");
