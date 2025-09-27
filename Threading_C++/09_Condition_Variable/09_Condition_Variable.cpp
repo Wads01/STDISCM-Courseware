@@ -11,20 +11,44 @@
 
 // Note - Always use std::unique_lock with std::condition_variable, as it provides the necessary flexibility for locking and unlocking the mutex.
 
-ull balance = 0;
+long balance = 0;
 std::mutex mtx;
 std::condition_variable cv;
 
-void addMoney(int amount() {
+void addMoney(long amount) {
+	std::lock_guard<std::mutex> lock(mtx);
+	balance += amount;
+	std::cout << "Added " << amount << ", new balance: " << balance << std::endl;
 
+	cv.notify_all(); // Notify all waiting threads that the balance has been updated
+}
+
+void withdrawMoney(long amount) {
+	std::cout << "Withdrawing.....Locking the mutex and waiting for balance to be non-zero..." << std::endl;
+    std::unique_lock<std::mutex> lock(mtx);
+    cv.wait(lock, [] { return balance != 0; });
+    if (balance >= amount) {
+        balance -= amount;
+        std::cout << "Withdrew " << amount << ", new balance: " << balance << std::endl;
+    } else {
+        std::cout << "Insufficient funds for withdrawal of " << amount << ", current balance: " << balance << std::endl;
+	}
+
+	std::cout << "Withdrawal of " << amount << " completed." << std::endl;
 }
 
 int main()
 {
     std::cout << " ========================= PROGRAM START ========================= " << std::endl;
 
-    std::thread t1();
-    std::thread t2();
+    std::thread t1(withdrawMoney, 500);
+
+	std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+
+    std::thread t2(addMoney, 500);
+
+	if (t1.joinable()) t1.join();
+	if (t2.joinable()) t2.join();
 
     std::cout << " ========================== PROGRAM END ========================== " << std::endl;
 
