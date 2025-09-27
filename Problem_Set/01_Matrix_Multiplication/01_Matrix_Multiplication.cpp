@@ -55,6 +55,9 @@ int main(int argc, char* argv[]) {
 
     infile.close();
 
+    size_t rowsA = matrixA.size();
+    size_t colsB = matrixB[0].size();
+
     // ============================ Traditional Approach ============================
 
     // Start Time
@@ -69,17 +72,14 @@ int main(int argc, char* argv[]) {
     // Calculate Duration
     auto std_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(std_end_time - std_start_time).count();
 
-    // =========================== Thread Approach ===================================
+    // =========================== Thread Per Row Approach ===================================
 
     auto thread_start_time = std::chrono::steady_clock::now();
 
     if (matrixA.empty() || matrixB.empty() || matrixA[0].size() != matrixB.size()) {
         throw std::invalid_argument("Incompatible matrix dimensions for multiplication.");
     }
-
 	// Create matrixD with correct dimensions initialized to 0
-    size_t rowsA = matrixA.size();
-    size_t colsB = matrixB[0].size();
     matrixD.assign(rowsA, std::vector<double>(colsB, 0.0));
 
 	// Vector of threads size rowsA
@@ -95,9 +95,13 @@ int main(int argc, char* argv[]) {
         if (t.joinable()) t.join();
     }
 
-    auto thread_end_time = std::chrono::steady_clock::now();
 
+    auto thread_end_time = std::chrono::steady_clock::now();
     auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
+
+	// ============================ Threads Approach ===================================
+
+
 
     // ============================ Output Results ==================================
 
