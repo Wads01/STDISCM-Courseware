@@ -99,9 +99,20 @@ int main(int argc, char* argv[]) {
     auto thread_end_time = std::chrono::steady_clock::now();
     auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
 
-	// ============================ Threads Approach ===================================
+	// ============================ ThreadPool Approach ===================================
 
+    auto threadpool_start_time = std::chrono::steady_clock::now();
 
+    if (matrixA.empty() || matrixB.empty() || matrixA[0].size() != matrixB.size()) {
+        throw std::invalid_argument("Incompatible matrix dimensions for multiplication.");
+    }
+
+    matrixD.assign(rowsA, std::vector<double>(colsB, 0.0));
+
+    // TODO
+
+    auto threadpool_end_time = std::chrono::steady_clock::now();
+    auto threadpool_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
 
     // ============================ Output Results ==================================
 
