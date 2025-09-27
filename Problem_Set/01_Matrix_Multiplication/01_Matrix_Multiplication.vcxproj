@@ -128,7 +128,7 @@
     <ClCompile Include="Worker.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IWorker.hpp" />
+    <ClInclude Include="ThreadPool.hpp" />
     <ClInclude Include="Worker.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
