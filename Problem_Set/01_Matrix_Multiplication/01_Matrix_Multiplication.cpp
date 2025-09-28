@@ -63,7 +63,7 @@ int main(int argc, char* argv[]) {
         throw std::invalid_argument("Incompatible matrix dimensions for multiplication.");
     }
 
-    // Create matrix with correct dimensions initialized to 0
+    // Create matrices with correct dimensions initialized to 0
     matrixC.assign(rowsA, std::vector<double>(colsB, 0.0));
     matrixD.assign(rowsA, std::vector<double>(colsB, 0.0));
     matrixE.assign(rowsA, std::vector<double>(colsB, 0.0));
@@ -89,20 +89,14 @@ int main(int argc, char* argv[]) {
 
     auto thread_start_time = std::chrono::steady_clock::now();
 
-    matrixD.assign(rowsA, std::vector<double>(colsB, 0.0));
-
-    // Vector of threads size rowsA
     std::vector<std::thread> threads;
     threads.reserve(rowsA);
 
-    // One thread per row
-    for (size_t i = 0; i < rowsA; ++i) {
+    for (size_t i = 0; i < rowsA; ++i)
         threads.emplace_back(Worker(matrixA, matrixB, matrixD, i, i + 1));
-    }
 
-    for (auto& t1 : threads) {
+    for (auto& t1 : threads)
         if (t1.joinable()) t1.join();
-    }
 
     auto thread_end_time = std::chrono::steady_clock::now();
     auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
@@ -131,9 +125,8 @@ int main(int argc, char* argv[]) {
 
     {
         ThreadPool pool(numWorkers);
-        for (size_t i = 0; i < rowsA; ++i) {
+        for (size_t i = 0; i < rowsA; ++i)
             pool.enqueue(Worker(matrixA, matrixB, matrixF, i, i + 1));
-        }
     }
 
     auto threadpool_end_time = std::chrono::steady_clock::now();
@@ -143,7 +136,7 @@ int main(int argc, char* argv[]) {
 
     std::ofstream outfile("output.txt");
     outfile << std::fixed << std::setprecision(1);
-    for (const auto& row : matrixF) {
+    for (const auto& row : matrixE) {
         for (const auto& val : row) {
             outfile << val << " ";
         }
@@ -151,10 +144,11 @@ int main(int argc, char* argv[]) {
     }
     outfile << "\n";
     outfile << "Standard Running Time: " << std_duration << " ns\n";
-	outfile << "Multithread Running Time: " << thread_duration << " ns\n";
 	//outfile << "Thread Per Row Running Time: " << thread_duration << " ns\n";
 	//outfile << "Round Robin Running Time: " << rr_duration << " ns\n";
     //outfile << "Threadpool Running Time: " << threadpool_duration << " ns\n";
+    outfile << "Multithread Running Time: " << thread_duration << " ns\n";
+
     outfile.close();
 
     return 0;
@@ -174,14 +168,13 @@ void stdMatrixMultiply(const Matrix& A, const Matrix& B, Matrix& result, size_t 
     }
 }
 
-void roundRobinWorker(const Matrix& A, const Matrix& B, Matrix& result, size_t start, size_t stride, size_t rowsA, size_t colsB)
-{
-    size_t inner = A[0].size();
+void roundRobinWorker(const Matrix& A, const Matrix& B, Matrix& result, size_t start, size_t stride, size_t rowsA, size_t colsB) {
+    size_t innerA = A[0].size();
 
     for (size_t i = start; i < rowsA; i += stride) {
         for (size_t j = 0; j < colsB; ++j) {
             double sum = 0.0;
-            for (size_t k = 0; k < inner; ++k) {
+            for (size_t k = 0; k < innerA; ++k) {
                 sum += A[i][k] * B[k][j];
             }
             result[i][j] = sum;

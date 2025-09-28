@@ -16,6 +16,7 @@ private:
     const Matrix& matrixA;
     const Matrix& matrixB;
     Matrix& matrixResult;
+
     std::size_t mStartRow;
     std::size_t mEndRow;
 };

@@ -34,9 +34,8 @@ public:
 		lock.unlock();
 		cv.notify_all();
 
-		for (std::thread& worker : workers) {
+		for (std::thread& worker : workers)
 			if (worker.joinable()) worker.join();
-		}
 	}
 
 	template<class F>
