@@ -1,15 +1,20 @@
 #pragma once
 #include <QMainWindow>
+#include <QPointF>
+#include <vector>
 
 class QPushButton;
-class QWidget;
+class VoronoiWidget;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(QWidget* parent = nullptr);
+    explicit MainWindow(const std::vector<QPointF>& sites, const std::vector<float>& temps, float distanceThreshold, QWidget* parent = nullptr);
+
+private slots:
+    void onLoadConfig();
 
 private:
     QPushButton* loadButton_;
-    QWidget* canvas_;
+    VoronoiWidget* canvas_;
 };

@@ -7,6 +7,8 @@ set(CMAKE_AUTOMOC ON)
 add_library(qt_wrapper STATIC 
 	${QT_BASE_DIR}/src/MainWindow.cpp
 	${QT_BASE_DIR}/include/MainWindow.hpp
+	${QT_BASE_DIR}/src/VoronoiWidget.cpp
+	${QT_BASE_DIR}/include/VoronoiWidget.hpp
 )
 
 target_include_directories(qt_wrapper PUBLIC

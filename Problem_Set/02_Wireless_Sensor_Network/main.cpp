@@ -45,14 +45,23 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-	std::cout << "Distance Threshold: " << distanceThreshold << "\n";
-	std::cout << "Cells:\n";
-	for (const auto& cell : cells) {
-		std::cout << "  (" << cell.x << ", " << cell.y << ") -> " << cell.temp << "\n";
-	}
+    std::vector<QPointF> sites;
+    std::vector<float> temps;
+    sites.reserve(cells.size());
+    temps.reserve(cells.size());
+    for (const auto& c : cells) {
+        sites.emplace_back(static_cast<double>(c.x), static_cast<double>(c.y));
+        temps.push_back(c.temp);
+    }
+
+    std::cout << "Distance Threshold: " << distanceThreshold << "\n";
+    std::cout << "Cells:\n";
+    for (const auto& cell : cells) {
+        std::cout << "  (" << cell.x << ", " << cell.y << ") -> " << cell.temp << "\n";
+    }
 
     QApplication app(argc, argv);
-    MainWindow w;
+    MainWindow w(sites, temps, distanceThreshold);
     w.show();
 
     return app.exec();
