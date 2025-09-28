@@ -10,16 +10,15 @@ Worker::Worker(const Matrix& A, const Matrix& B, Matrix& result, std::size_t sta
 
 void Worker::operator()()
 {
+    size_t innerA = matrixA[0].size();
+
     std::size_t colsB = matrixB[0].size();
     for (std::size_t i = mStartRow; i < mEndRow; ++i) {
         for (std::size_t j = 0; j < colsB; ++j) {
-
             double sum = 0.0;
-
-            for (std::size_t k = 0; k < matrixA[0].size(); ++k) {
+            for (std::size_t k = 0; k < innerA; ++k) {
 				sum += matrixA[i][k] * matrixB[k][j];
             }
-
             matrixResult[i][j] = sum;
         }
     }
