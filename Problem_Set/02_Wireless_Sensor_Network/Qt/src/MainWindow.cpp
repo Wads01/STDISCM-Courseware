@@ -19,18 +19,17 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
 {
     setFixedSize(800, 600);
 
-    // Build central widget with a top bar and a canvas area
+    // Central widget w/ top bar and canvas area
     auto* central = new QWidget(this);
     auto* vlay = new QVBoxLayout(central);
     vlay->setContentsMargins(8, 8, 8, 8);
     vlay->setSpacing(8);
 
-    // Top bar containing the centered "Load Config" button
+    // Top bar "Load Config" button
     auto* topBar = new QWidget(central);
     auto* hlay = new QHBoxLayout(topBar);
     hlay->setContentsMargins(0, 0, 0, 0);
     hlay->setSpacing(0);
-
     loadButton_ = new QPushButton("Load Config", topBar);
     loadButton_->setFixedHeight(26);
     loadButton_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -46,7 +45,6 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
 
     setCentralWidget(central);
 
-    // Apply initial data
     canvas_->setData(sites, temps, distanceThreshold);
 
     connect(loadButton_, &QPushButton::clicked, this, &MainWindow::onLoadConfig);

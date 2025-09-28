@@ -18,12 +18,16 @@ void VoronoiWidget::setData(const std::vector<QPointF>& sites, const std::vector
     temps_ = temps;
     distanceThreshold_ = distanceThreshold;
 
-    // generate deterministic colors per site
+    // Golden-angle color spacing
     colors_.clear();
     colors_.reserve(inputSites_.size());
+    const int saturation = 220;
+    const int value = 200;
+    const int golden = 137;
+
     for (size_t i = 0; i < inputSites_.size(); ++i) {
-        int hue = static_cast<int>((i * 97) % 360);
-        QColor c = QColor::fromHsv(hue, 200, 220);
+        int hue = static_cast<int>((i * golden) % 360);
+        QColor c = QColor::fromHsv(hue, saturation, value);
         colors_.push_back(c);
     }
 
@@ -54,19 +58,24 @@ void VoronoiWidget::paintEvent(QPaintEvent* /*event*/)
 
     for (size_t i = 0; i < mappedSites_.size(); ++i) {
         const QPointF& pt = mappedSites_[i];
-        QColor c = colors_[i];
-        p.setBrush(c);
-        p.setPen(Qt::NoPen);
-        p.drawEllipse(pt, 4.0, 4.0);
+        QColor siteColor = colors_[i];
 
-        // Determine contrasting text color
-        int brightness = (c.red() * 299 + c.green() * 587 + c.blue() * 114) / 1000;
+        // White circle at each cell coordinate
+        p.setBrush(Qt::white);
+        QPen pen(Qt::black);
+        pen.setWidthF(1.2);
+        p.setPen(pen);
+        const double radius = 5.0;
+        p.drawEllipse(pt, radius, radius);
+
+        // Determine contrasting text color based on the region color (not the white marker)
+        int brightness = (siteColor.red() * 299 + siteColor.green() * 587 + siteColor.blue() * 114) / 1000;
         QColor textColor = (brightness < 128) ? Qt::white : Qt::black;
         p.setPen(textColor);
 
         if (i < temps_.size()) {
             QString txt = QString::number(temps_[i], 'f', 1);
-            QRectF textRect(pt.x() + 6, pt.y() - 10, 60, 20);
+            QRectF textRect(pt.x() + 8, pt.y() - 10, 60, 20);
             p.drawText(textRect, txt);
         }
     }
@@ -82,7 +91,7 @@ void VoronoiWidget::regenerateImage()
     }
 
     cachedImage_ = QImage(w, h, QImage::Format_RGB32);
-    cachedImage_.fill(QColor(60, 60, 60)); // interior background
+    cachedImage_.fill(QColor(60, 60, 60));
 
     if (inputSites_.empty()) return;
 
