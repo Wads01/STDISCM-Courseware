@@ -150,10 +150,11 @@ int main(int argc, char* argv[]) {
         outfile << "\n";
     }
     outfile << "\n";
-    outfile << "Standard Running Time: " << std_duration << " ns.\n";
-	outfile << "Thread Per Row Running Time: " << thread_duration << " ns.\n";
-	outfile << "Round Robin Running Time: " << rr_duration << " ns.\n";
-    outfile << "Threadpool Running Time: " << threadpool_duration << " ns.\n";
+    outfile << "Standard Running Time: " << std_duration << " ns\n";
+	outfile << "Multithread Running Time: " << thread_duration << " ns\n";
+	//outfile << "Thread Per Row Running Time: " << thread_duration << " ns\n";
+	//outfile << "Round Robin Running Time: " << rr_duration << " ns\n";
+    //outfile << "Threadpool Running Time: " << threadpool_duration << " ns\n";
     outfile.close();
 
     return 0;
