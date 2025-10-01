@@ -66,7 +66,13 @@ int main(int argc, char* argv[]) {
     size_t colsB = matrixB[0].size();
 
     if (matrixA.empty() || matrixB.empty() || matrixA[0].size() != matrixB.size()) {
-        throw std::invalid_argument("Incompatible matrix dimensions for multiplication.");
+        std::cout << ("Incompatible matrix dimensions for multiplication.") << std::endl;
+
+		std::ofstream outfile(getDefaultOutputPath());
+		outfile << "Incompatible matrix dimensions for multiplication.\n";
+		outfile.close();
+
+		return 1;
     }
 
     // Create matrices with correct dimensions initialized to 0
