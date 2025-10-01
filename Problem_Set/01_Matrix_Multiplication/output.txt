@@ -1,8 +1,6 @@
-45.8 28.8 20.3 
-59.2 55.4 30.9 
-79.5 36.6 58.6 
+21.9 23.4 7.7 
+53.4 54.0 27.8 
+30.8 25.5 32.9 
 
-Standard Running Time: 1200 ns.
-Thread Per Row Running Time: 2935300 ns.
-Round Robin Running Time: 931500 ns.
-Threadpool Running Time: 907200 ns.
+Standard Running Time: 1100 ns
+Multithread Running Time: 2957500 ns

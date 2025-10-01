@@ -12,20 +12,26 @@
 
 using Matrix = std::vector<std::vector<double>>;
 
+static std::string getDefaultInputPath();
+static std::string getDefaultOutputPath();
 void stdMatrixMultiply(const Matrix& A, const Matrix& B, Matrix& result, size_t rowsA, size_t colsB);
 void roundRobinWorker(const Matrix& A, const Matrix& B, Matrix& result, size_t start, size_t stride, size_t rowsA, size_t colsB);
 
 int main(int argc, char* argv[]) {
-    std::string filepath = "input.txt"; 
+    std::string infilePath;
     if (argc == 2) {
-        filepath = argv[1];
+        infilePath = argv[1];
+    }
+    else {
+        infilePath = getDefaultInputPath();
     }
 
-    std::ifstream infile("input.txt");
+    std::ifstream infile(infilePath);
     if (!infile) {
-        std::cerr << "Error: Could not open input.txt\n";
+        std::cerr << "Error: Could not open " << infilePath << '\n';
         return 1;
     }
+
 
     Matrix matrixA, matrixB, matrixC, matrixD, matrixE, matrixF;
 
@@ -87,19 +93,19 @@ int main(int argc, char* argv[]) {
 
     // =========================== Thread Per Row Approach ===================================
 
-    auto thread_start_time = std::chrono::steady_clock::now();
+    //auto thread_start_time = std::chrono::steady_clock::now();
 
-    std::vector<std::thread> threads;
-    threads.reserve(rowsA);
+    //std::vector<std::thread> threads;
+    //threads.reserve(rowsA);
 
-    for (size_t i = 0; i < rowsA; ++i)
-        threads.emplace_back(Worker(matrixA, matrixB, matrixD, i, i + 1));
+    //for (size_t i = 0; i < rowsA; ++i)
+    //    threads.emplace_back(Worker(matrixA, matrixB, matrixD, i, i + 1));
 
-    for (auto& t1 : threads)
-        if (t1.joinable()) t1.join();
+    //for (auto& t1 : threads)
+    //    if (t1.joinable()) t1.join();
 
-    auto thread_end_time = std::chrono::steady_clock::now();
-    auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
+    //auto thread_end_time = std::chrono::steady_clock::now();
+    //auto thread_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(thread_end_time - thread_start_time).count();
 
     // ============================ Round Robin Approach ===================================
 
@@ -121,20 +127,20 @@ int main(int argc, char* argv[]) {
 
     // ============================ ThreadPool Approach ===================================
 
-    auto threadpool_start_time = std::chrono::steady_clock::now();
+    //auto threadpool_start_time = std::chrono::steady_clock::now();
 
-    {
-        ThreadPool pool(numWorkers);
-        for (size_t i = 0; i < rowsA; ++i)
-            pool.enqueue(Worker(matrixA, matrixB, matrixF, i, i + 1));
-    }
+    //{
+    //    ThreadPool pool(numWorkers);
+    //    for (size_t i = 0; i < rowsA; ++i)
+    //        pool.enqueue(Worker(matrixA, matrixB, matrixF, i, i + 1));
+    //}
 
-    auto threadpool_end_time = std::chrono::steady_clock::now();
-    auto threadpool_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(threadpool_end_time - threadpool_start_time).count();
+    //auto threadpool_end_time = std::chrono::steady_clock::now();
+    //auto threadpool_duration = std::chrono::duration_cast<std::chrono::nanoseconds>(threadpool_end_time - threadpool_start_time).count();
 
     // ============================ Output Results ==================================
 
-    std::ofstream outfile("output.txt");
+    std::ofstream outfile(getDefaultOutputPath());
     outfile << std::fixed << std::setprecision(1);
     for (const auto& row : matrixE) {
         for (const auto& val : row) {
@@ -147,11 +153,25 @@ int main(int argc, char* argv[]) {
 	//outfile << "Thread Per Row Running Time: " << thread_duration << " ns\n";
 	//outfile << "Round Robin Running Time: " << rr_duration << " ns\n";
     //outfile << "Threadpool Running Time: " << threadpool_duration << " ns\n";
-    outfile << "Multithread Running Time: " << thread_duration << " ns\n";
+    outfile << "Multithread Running Time: " << rr_duration << " ns\n";
 
     outfile.close();
 
     return 0;
+}
+
+static std::string getDefaultInputPath() {
+    std::string filePath(__FILE__);
+    size_t pos = filePath.find_last_of("\\/");
+    std::string dir = (pos == std::string::npos) ? std::string(".") : filePath.substr(0, pos);
+    return dir + "/input.txt";
+}
+
+static std::string getDefaultOutputPath() {
+    std::string filePath(__FILE__);
+    size_t pos = filePath.find_last_of("\\/");
+    std::string dir = (pos == std::string::npos) ? std::string(".") : filePath.substr(0, pos);
+    return dir + "/output.txt";
 }
 
 void stdMatrixMultiply(const Matrix& A, const Matrix& B, Matrix& result, size_t rowsA, size_t colsB) {
