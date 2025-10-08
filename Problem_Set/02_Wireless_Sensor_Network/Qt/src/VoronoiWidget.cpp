@@ -81,6 +81,91 @@ void VoronoiWidget::paintEvent(QPaintEvent* /*event*/)
     }
 }
 
+void VoronoiWidget::computeBoundingBox(double& minX, double& minY, double& maxX, double& maxY) const
+{
+    if (inputSites_.empty()) {
+        minX = minY = maxX = maxY = 0.0;
+        return;
+    }
+
+    minX = inputSites_[0].x();
+    minY = inputSites_[0].y();
+    maxX = minX;
+    maxY = minY;
+    for (const auto& s : inputSites_) {
+        minX = std::min(minX, (double)s.x());
+        minY = std::min(minY, (double)s.y());
+        maxX = std::max(maxX, (double)s.x());
+        maxY = std::max(maxY, (double)s.y());
+    }
+}
+
+void VoronoiWidget::computeScaleAndOffset(int w, int h, double minX, double minY, double maxX, double maxY, double& outScale, double& outOffsetX, double& outOffsetY, int margin) const
+{
+    double bw = maxX - minX;
+    double bh = maxY - minY;
+
+    double availW = std::max(1.0, double(w - 2 * margin));
+    double availH = std::max(1.0, double(h - 2 * margin));
+    double scaleX = bw > 0.0 ? availW / bw : 1.0;
+    double scaleY = bh > 0.0 ? availH / bh : 1.0;
+    double scale = std::min(scaleX, scaleY);
+
+    // Center offset if aspect ratio leaves extra space
+    double usedW = (bw > 0.0 ? bw * scale : 0.0);
+    double usedH = (bh > 0.0 ? bh * scale : 0.0);
+    double offsetX = margin + (availW - usedW) * 0.5 - minX * scale;
+    double offsetY = margin + (availH - usedH) * 0.5 - minY * scale;
+
+    outScale = scale;
+    outOffsetX = offsetX;
+    outOffsetY = offsetY;
+}
+
+int VoronoiWidget::nearestSiteIndex(int px, int py, double& outDistSq) const
+{
+    double bestDistSq = std::numeric_limits<double>::infinity();
+    int bestIdx = -1;
+    for (size_t i = 0; i < mappedSites_.size(); ++i) {
+        double dx = mappedSites_[i].x() - px;
+        double dy = mappedSites_[i].y() - py;
+        double d2 = dx * dx + dy * dy;
+        if (d2 < bestDistSq) {
+            bestDistSq = d2;
+            bestIdx = static_cast<int>(i);
+        }
+    }
+    outDistSq = bestDistSq;
+    return bestIdx;
+}
+
+void VoronoiWidget::rasterize(int w, int h, double thresholdSq)
+{
+    // For each pixel, determine nearest site
+    for (int y = 0; y < h; ++y) {
+        QRgb* scanLine = reinterpret_cast<QRgb*>(cachedImage_.scanLine(y));
+        for (int x = 0; x < w; ++x) {
+            double bestDistSq = 0.0;
+            int bestIdx = nearestSiteIndex(x, y, bestDistSq);
+
+            QColor color;
+            if (bestIdx >= 0) {
+                if (distanceThreshold_ > 0.0 && bestDistSq > thresholdSq) {
+                    color = QColor(80, 80, 80);
+                }
+                else {
+                    color = colors_[bestIdx];
+                }
+            }
+            else {
+                color = QColor(80, 80, 80);
+            }
+
+            scanLine[x] = color.rgb();
+        }
+    }
+}
+
 void VoronoiWidget::regenerateImage()
 {
     const int w = width();
@@ -96,32 +181,11 @@ void VoronoiWidget::regenerateImage()
     if (inputSites_.empty()) return;
 
     // Compute bounding box of input sites
-    double minX = inputSites_[0].x();
-    double minY = inputSites_[0].y();
-    double maxX = minX;
-    double maxY = minY;
-    for (const auto& s : inputSites_) {
-        minX = std::min(minX, (double)s.x());
-        minY = std::min(minY, (double)s.y());
-        maxX = std::max(maxX, (double)s.x());
-        maxY = std::max(maxY, (double)s.y());
-    }
+    double minX, minY, maxX, maxY;
+    computeBoundingBox(minX, minY, maxX, maxY);
 
-    double bw = maxX - minX;
-    double bh = maxY - minY;
-    const int margin = 20;
-
-    double availW = std::max(1.0, double(w - 2 * margin));
-    double availH = std::max(1.0, double(h - 2 * margin));
-    double scaleX = bw > 0.0 ? availW / bw : 1.0;
-    double scaleY = bh > 0.0 ? availH / bh : 1.0;
-    double scale = std::min(scaleX, scaleY);
-
-    // Center offset if aspect ratio leaves extra space
-    double usedW = (bw > 0.0 ? bw * scale : 0.0);
-    double usedH = (bh > 0.0 ? bh * scale : 0.0);
-    double offsetX = margin + (availW - usedW) * 0.5 - minX * scale;
-    double offsetY = margin + (availH - usedH) * 0.5 - minY * scale;
+    double scale, offsetX, offsetY;
+    computeScaleAndOffset(w, h, minX, minY, maxX, maxY, scale, offsetX, offsetY);
 
     // Map input sites to widget coords
     mappedSites_.clear();
@@ -135,37 +199,5 @@ void VoronoiWidget::regenerateImage()
     double thresholdInPixels = distanceThreshold_ * scale;
     double thresholdSq = thresholdInPixels * thresholdInPixels;
 
-    // For each pixel, determine nearest site
-    for (int y = 0; y < h; ++y) {
-        QRgb* scanLine = reinterpret_cast<QRgb*>(cachedImage_.scanLine(y));
-        for (int x = 0; x < w; ++x) {
-            double bestDistSq = std::numeric_limits<double>::infinity();
-            int bestIdx = -1;
-            for (size_t i = 0; i < mappedSites_.size(); ++i) {
-                double dx = mappedSites_[i].x() - x;
-                double dy = mappedSites_[i].y() - y;
-                double d2 = dx * dx + dy * dy;
-                if (d2 < bestDistSq) {
-                    bestDistSq = d2;
-                    bestIdx = static_cast<int>(i);
-                }
-            }
-
-            QColor color;
-            if (bestIdx >= 0) {
-                if (distanceThreshold_ > 0.0 && bestDistSq > thresholdSq) {
-                    // outside threshold => darker background
-                    color = QColor(80, 80, 80);
-                }
-                else {
-                    color = colors_[bestIdx];
-                }
-            }
-            else {
-                color = QColor(80, 80, 80);
-            }
-
-            scanLine[x] = color.rgb();
-        }
-    }
+    rasterize(w, h, thresholdSq);
 }

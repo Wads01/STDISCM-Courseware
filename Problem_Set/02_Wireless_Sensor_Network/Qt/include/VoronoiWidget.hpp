@@ -18,9 +18,15 @@ protected:
 private:
     void regenerateImage();
 
+    void computeBoundingBox(double& minX, double& minY, double& maxX, double& maxY) const;
+    void computeScaleAndOffset(int w, int h, double minX, double minY, double maxX, double maxY, double& outScale, double& outOffsetX, double& outOffsetY, int margin = 20) const;
+    int nearestSiteIndex(int px, int py, double& outDistSq) const;
+    void rasterize(int w, int h, double thresholdSq);
+
     std::vector<QPointF> inputSites_;
     std::vector<QPointF> mappedSites_;
     std::vector<float> temps_;
+
     std::vector<QColor> colors_;
     float distanceThreshold_ = 0.0f;
 
