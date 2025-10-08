@@ -54,12 +54,6 @@ int main(int argc, char** argv) {
         temps.push_back(c.temp);
     }
 
-    std::cout << "Distance Threshold: " << distanceThreshold << "\n";
-    std::cout << "Cells:\n";
-    for (const auto& cell : cells) {
-        std::cout << "  (" << cell.x << ", " << cell.y << ") -> " << cell.temp << "\n";
-    }
-
     QApplication app(argc, argv);
     MainWindow w(sites, temps, distanceThreshold);
     w.show();

@@ -93,4 +93,7 @@ void MainWindow::onLoadConfig()
     }
 
     canvas_->setData(sites, temps, distanceThreshold);
+
+    // Debug
+	canvas_->printNeighbors();
 }

@@ -5,6 +5,7 @@
 #include <QColor>
 #include <QTextOption>
 #include <cmath>
+#include <iostream>
 
 VoronoiWidget::VoronoiWidget(QWidget* parent)
     : QWidget(parent)
@@ -31,8 +32,23 @@ void VoronoiWidget::setData(const std::vector<QPointF>& sites, const std::vector
         colors_.push_back(c);
     }
 
+    computeNeighbors();
+
     regenerateImage();
     update();
+}
+
+void VoronoiWidget::printNeighbors() const
+{
+    std::cout << "Neighbors:\n";
+    for (size_t i = 0; i < neighbors_.size(); ++i) {
+        std::cout << i << ": ";
+        for (size_t j = 0; j < neighbors_[i].size(); ++j) {
+            std::cout << neighbors_[i][j];
+            if (j + 1 < neighbors_[i].size()) std::cout << ", ";
+        }
+        std::cout << "\n";
+    }
 }
 
 void VoronoiWidget::resizeEvent(QResizeEvent* /*event*/)
@@ -120,6 +136,28 @@ void VoronoiWidget::computeScaleAndOffset(int w, int h, double minX, double minY
     outScale = scale;
     outOffsetX = offsetX;
     outOffsetY = offsetY;
+}
+
+void VoronoiWidget::computeNeighbors()
+{
+    const size_t n = inputSites_.size();
+    neighbors_.assign(n, {});
+    if (n == 0) return;
+
+    double thr = static_cast<double>(distanceThreshold_);
+    double thrSq = thr * thr;
+
+    for (size_t i = 0; i < n; ++i) {
+        for (size_t j = i + 1; j < n; ++j) {
+            double dx = inputSites_[i].x() - inputSites_[j].x();
+            double dy = inputSites_[i].y() - inputSites_[j].y();
+            double d2 = dx * dx + dy * dy;
+            if (d2 <= thrSq) {
+                neighbors_[i].push_back(static_cast<int>(j));
+                neighbors_[j].push_back(static_cast<int>(i));
+            }
+        }
+    }
 }
 
 int VoronoiWidget::nearestSiteIndex(int px, int py, double& outDistSq) const
