@@ -19,17 +19,18 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
 {
     setFixedSize(800, 600);
 
-    // Central widget w/ top bar and canvas area
+    // Central widget
     auto* central = new QWidget(this);
     auto* vlay = new QVBoxLayout(central);
     vlay->setContentsMargins(8, 8, 8, 8);
     vlay->setSpacing(8);
 
-    // Top bar "Load Config" button
+    // Top bar button
     auto* topBar = new QWidget(central);
     auto* hlay = new QHBoxLayout(topBar);
     hlay->setContentsMargins(0, 0, 0, 0);
     hlay->setSpacing(0);
+
     loadButton_ = new QPushButton("Load Config", topBar);
     loadButton_->setFixedHeight(26);
     loadButton_->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Fixed);
@@ -45,7 +46,11 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
 
     setCentralWidget(central);
 
+	// Pass Data to voronoi widget 
     canvas_->setData(sites, temps, distanceThreshold);
+
+    // Debug
+	canvas_->printNeighbors();
 
     connect(loadButton_, &QPushButton::clicked, this, &MainWindow::onLoadConfig);
 }
@@ -68,7 +73,7 @@ void MainWindow::onLoadConfig()
     std::vector<QPointF> sites;
     std::vector<float> temps;
 
-    // Read first non-empty line as threshold
+    // Read first line as threshold
     while (!in.atEnd()) {
         line = in.readLine();
         if (line.trimmed().isEmpty()) continue;
