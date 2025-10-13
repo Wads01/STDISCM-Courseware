@@ -18,12 +18,14 @@ set(CMAKE_BUILD_TYPE_INIT "Debug")
 
 set(CMAKE_PREFIX_PATH "C:/Qt/6.9.2/msvc2022_64/lib/cmake/Qt6")
 set(QT_BASE_DIR "${CMAKE_SOURCE_DIR}/Qt" CACHE PATH "Qt SRC" FORCE)
+set(SIM_BASE_DIR "${CMAKE_SOURCE_DIR}/sim" CACHE PATH "Sim SRC" FORCE)
 
+add_subdirectory(sim)
 add_subdirectory(Qt)
 
 add_executable(${PROJECT_NAME} main.cpp)
 
-target_link_libraries(${PROJECT_NAME} PRIVATE qt_wrapper)
+target_link_libraries(${PROJECT_NAME} PRIVATE sim qt_wrapper)
 
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE CONFIG_PATH="${CMAKE_SOURCE_DIR}/config.txt"
