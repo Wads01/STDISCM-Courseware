@@ -19,4 +19,5 @@ target_link_libraries(qt_wrapper PUBLIC
 	Qt6::Widgets
 	Qt6::Core
 	Qt6::Gui
+	sim
 )

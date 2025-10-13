@@ -9,13 +9,17 @@
 #include <QFile>
 #include <QTextStream>
 #include <QMessageBox>
+#include <QTimer>
 
 #include <sstream>
+#include <iostream>
+#include <iomanip>
 
 MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<float>& temps, float distanceThreshold, QWidget* parent)
     : QMainWindow(parent)
     , loadButton_(nullptr)
     , canvas_(nullptr)
+    , printTimer_(nullptr)
 {
     setFixedSize(800, 600);
 
@@ -46,13 +50,22 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
 
     setCentralWidget(central);
 
+    printTimer_ = new QTimer(this);
+    connect(printTimer_, &QTimer::timeout, this, &MainWindow::onPrintTemperaturesPeriodically);
+
     // Pass Data to voronoi widget 
     canvas_->setData(sites, temps, distanceThreshold);
 
     // Debug
     canvas_->printNeighbors();
 
+    startSimulation();
+
     connect(loadButton_, &QPushButton::clicked, this, &MainWindow::onLoadConfig);
+}
+
+MainWindow::~MainWindow() {
+    stopSimulation();
 }
 
 void MainWindow::onLoadConfig()
@@ -138,4 +151,30 @@ void MainWindow::onLoadConfig()
 
     // Debug
     canvas_->printNeighbors();
+    
+    stopSimulation();
+    startSimulation();
+}
+
+void MainWindow::startSimulation() {
+    std::cout << "Starting simulation...\n";
+    canvas_->startSensorSimulation();
+    printTimer_->start(PRINT_INTERVAL_MS);
+}
+
+void MainWindow::stopSimulation() {  
+    std::cout << "Stopping simulation...\n";
+    printTimer_->stop();
+    canvas_->stopSensorSimulation();
+}
+
+void MainWindow::onPrintTemperaturesPeriodically() {
+    auto temps = canvas_->getCurrentTemperatures();
+
+    std::cout << "Current temperatures: ";
+    for (size_t i = 0; i < temps.size(); ++i) {
+        std::cout << std::fixed << std::setprecision(1) << temps[i];
+        if (i < temps.size() - 1) std::cout << ", ";
+    }
+    std::cout << "\n";
 }

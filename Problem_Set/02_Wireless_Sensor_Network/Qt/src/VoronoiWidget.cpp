@@ -1,4 +1,5 @@
 #include "VoronoiWidget.hpp"
+#include "Sensor.hpp"
 
 #include <QPainter>
 #include <QImage>
@@ -6,15 +7,16 @@
 #include <QTextOption>
 #include <cmath>
 #include <iostream>
+#include <atomic>
 
-VoronoiWidget::VoronoiWidget(QWidget* parent)
-    : QWidget(parent)
-{
+VoronoiWidget::VoronoiWidget(QWidget* parent) : QWidget(parent) {
     setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void VoronoiWidget::setData(const std::vector<QPointF>& sites, const std::vector<float>& temps, float distanceThreshold)
 {
+    stopSensorSimulation();
+    
     inputSites_ = sites;
     temps_ = temps;
     distanceThreshold_ = distanceThreshold;
@@ -33,6 +35,9 @@ void VoronoiWidget::setData(const std::vector<QPointF>& sites, const std::vector
     }
 
     computeNeighbors();
+    
+
+    initializeSensors();
 
     regenerateImage();
     update();
@@ -235,4 +240,71 @@ void VoronoiWidget::regenerateImage()
     double thresholdSq = thresholdInPixels * thresholdInPixels;
 
     rasterize(w, h, thresholdSq);
+}
+
+void VoronoiWidget::initializeSensors()
+{
+    sensors_.clear();
+    
+    const size_t numSites = inputSites_.size();
+    if (numSites == 0) return;
+    
+    sharedTemps_ = std::make_shared<std::vector<std::atomic<float>>>(numSites);
+    
+    // Initialize temperature
+    for (size_t i = 0; i < numSites; ++i) {
+        float initialTemp = 20.0f; // default
+        if (i < temps_.size()) {
+            initialTemp = temps_[i];
+        }
+        (*sharedTemps_)[i].store(initialTemp, std::memory_order_relaxed);
+    }
+    
+    // Create sensors w/ neighbor relationships
+    sensors_.reserve(numSites);
+    for (size_t i = 0; i < numSites; ++i) {
+        std::vector<size_t> neighborIndices;
+        if (i < neighbors_.size()) {
+            for (int neighborIdx : neighbors_[i]) {
+                if (neighborIdx >= 0 && static_cast<size_t>(neighborIdx) < numSites) {
+                    neighborIndices.push_back(static_cast<size_t>(neighborIdx));
+                }
+            }
+        }
+        
+        sensors_.push_back(std::make_unique<sim::Sensor>(i, sharedTemps_, std::move(neighborIndices)));
+    }
+    
+    std::cout << "Initialized " << sensors_.size() << " sensors\n";
+}
+
+void VoronoiWidget::startSensorSimulation()
+{
+    std::cout << "Starting sensor simulation...\n";
+    for (auto& sensor : sensors_) {
+        if (sensor)
+            sensor->start();
+    }
+}
+
+void VoronoiWidget::stopSensorSimulation()
+{
+    std::cout << "Stopping sensor simulation...\n";
+    for (auto& sensor : sensors_) {
+        if (sensor)
+            sensor->stop();
+    }
+}
+
+std::vector<float> VoronoiWidget::getCurrentTemperatures() const
+{
+    std::vector<float> currentTemps;
+    if (!sharedTemps_)
+        return currentTemps;
+    
+    currentTemps.reserve(sharedTemps_->size());
+    for (const auto& atomicTemp : *sharedTemps_)
+        currentTemps.push_back(atomicTemp.load(std::memory_order_relaxed));
+
+    return currentTemps;
 }
