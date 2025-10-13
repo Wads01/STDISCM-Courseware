@@ -8,6 +8,7 @@
 #include <cmath>
 #include <iostream>
 #include <atomic>
+#include <chrono>
 
 VoronoiWidget::VoronoiWidget(QWidget* parent) : QWidget(parent) {
     setAttribute(Qt::WA_OpaquePaintEvent);
@@ -278,12 +279,14 @@ void VoronoiWidget::initializeSensors()
     std::cout << "Initialized " << sensors_.size() << " sensors\n";
 }
 
-void VoronoiWidget::startSensorSimulation()
+void VoronoiWidget::startSensorSimulation(int sensorDelayMs)
 {
-    std::cout << "Starting sensor simulation...\n";
+    std::cout << "Starting sensor simulation with " << sensorDelayMs << "ms delay...\n";
     for (auto& sensor : sensors_) {
-        if (sensor)
+        if (sensor) {
+            sensor->setSleepDuration(std::chrono::milliseconds(sensorDelayMs));
             sensor->start();
+        }
     }
 }
 
@@ -307,4 +310,18 @@ std::vector<float> VoronoiWidget::getCurrentTemperatures() const
         currentTemps.push_back(atomicTemp.load(std::memory_order_relaxed));
 
     return currentTemps;
+}
+
+void VoronoiWidget::updateDisplayTemperatures()
+{
+    if (sharedTemps_) {
+        temps_.clear();
+        temps_.reserve(sharedTemps_->size());
+        for (const auto& atomicTemp : *sharedTemps_) {
+            temps_.push_back(atomicTemp.load(std::memory_order_relaxed));
+        }
+        
+        // Repaint
+        update();
+    }
 }

@@ -19,9 +19,10 @@ public:
 
     void printNeighbors() const;
     
-    void startSensorSimulation();
+    void startSensorSimulation(int sensorDelayMs = 200);
     void stopSensorSimulation();
     std::vector<float> getCurrentTemperatures() const;
+    void updateDisplayTemperatures();
 
 protected:
     void paintEvent(QPaintEvent* event) override;

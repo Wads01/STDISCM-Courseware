@@ -16,6 +16,7 @@ public:
 private slots:
     void onLoadConfig();
     void onPrintTemperaturesPeriodically();
+    void onUpdateGUI();
 
 private:
     void startSimulation();
@@ -24,6 +25,9 @@ private:
     QPushButton* loadButton_;
     VoronoiWidget* canvas_;
     QTimer* printTimer_;
+    QTimer* updateTimer_;
     
-    static constexpr int PRINT_INTERVAL_MS = 2000;
+    static constexpr int PRINT_INTERVAL_MS = 1000;
+    static constexpr int SENSOR_UPDATE_MS = 500;
+    static constexpr int GUI_UPDATE_MS = 100;
 };

@@ -20,6 +20,7 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
     , loadButton_(nullptr)
     , canvas_(nullptr)
     , printTimer_(nullptr)
+    , updateTimer_(nullptr)
 {
     setFixedSize(800, 600);
 
@@ -52,6 +53,9 @@ MainWindow::MainWindow(const std::vector<QPointF>& sites, const std::vector<floa
 
     printTimer_ = new QTimer(this);
     connect(printTimer_, &QTimer::timeout, this, &MainWindow::onPrintTemperaturesPeriodically);
+    
+    updateTimer_ = new QTimer(this);
+    connect(updateTimer_, &QTimer::timeout, this, &MainWindow::onUpdateGUI);
 
     // Pass Data to voronoi widget 
     canvas_->setData(sites, temps, distanceThreshold);
@@ -158,13 +162,15 @@ void MainWindow::onLoadConfig()
 
 void MainWindow::startSimulation() {
     std::cout << "Starting simulation...\n";
-    canvas_->startSensorSimulation();
+    canvas_->startSensorSimulation(SENSOR_UPDATE_MS);
     printTimer_->start(PRINT_INTERVAL_MS);
+    updateTimer_->start(GUI_UPDATE_MS);
 }
 
 void MainWindow::stopSimulation() {  
     std::cout << "Stopping simulation...\n";
     printTimer_->stop();
+    updateTimer_->stop();
     canvas_->stopSensorSimulation();
 }
 
@@ -177,4 +183,9 @@ void MainWindow::onPrintTemperaturesPeriodically() {
         if (i < temps.size() - 1) std::cout << ", ";
     }
     std::cout << "\n";
+}
+
+void MainWindow::onUpdateGUI() {
+    // Update the GUI with current sensor temperatures
+    canvas_->updateDisplayTemperatures();
 }
