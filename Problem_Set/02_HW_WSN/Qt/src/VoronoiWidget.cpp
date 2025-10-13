@@ -87,11 +87,15 @@ void VoronoiWidget::paintEvent(QPaintEvent* /*event*/)
         QColor textColor = Qt::white;
         p.setPen(textColor);
 
-		// Temperature text
-        if (i < temps_.size()) {
-			QString txt = QString::number(temps_[i], 'f', 1); // One decimal place
-            QRectF textRect(pt.x() + 8, pt.y() - 10, 60, 20);
-            p.drawText(textRect, txt);
+        // Coordinates
+        if (i < inputSites_.size()) {
+            const QPointF& orig = inputSites_[i];
+            QString xs = QString::number(orig.x(), 'f', 1);
+            QString ys = QString::number(orig.y(), 'f', 1);
+            QString txt = QString("[") + xs + " , " + ys + "]";
+
+            QRectF textRect(pt.x() + 8, pt.y() - 10, 200, 20);
+            p.drawText(textRect, Qt::AlignLeft | Qt::AlignVCenter, txt);
         }
     }
 }
@@ -188,7 +192,7 @@ void VoronoiWidget::rasterize(int w, int h, double thresholdSq)
             QColor color;
             if (bestIdx >= 0) {
                 if (distanceThreshold_ > 0.0 && bestDistSq > thresholdSq)
-					color = QColor(80, 80, 80); // Gray if beyond threshold
+                    color = QColor(80, 80, 80); // Gray if beyond threshold
                 else 
                     color = colors_[bestIdx];
             }
@@ -218,7 +222,7 @@ void VoronoiWidget::regenerateImage()
     double minX, minY, maxX, maxY;
     computeBoundingBox(minX, minY, maxX, maxY);
 
-	// Compute scale and offset
+    // Compute scale and offset
     double scale, offsetX, offsetY;
     computeScaleAndOffset(w, h, minX, minY, maxX, maxY, scale, offsetX, offsetY);
 

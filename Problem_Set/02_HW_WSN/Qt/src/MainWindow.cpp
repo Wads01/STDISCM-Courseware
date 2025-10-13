@@ -69,7 +69,7 @@ void MainWindow::onLoadConfig()
     QTextStream in(&f);
     QString line;
 
-    float distanceThreshold = 300.0f;
+    float distanceThreshold = 500.0f;
     std::vector<QPointF> sites;
     std::vector<float> temps;
 
@@ -93,7 +93,7 @@ void MainWindow::onLoadConfig()
                 distanceThreshold = std::stof(tokens[0]);
             }
             catch (...) {
-                distanceThreshold = 300.0f;
+                distanceThreshold = 500.0f;
             }
         }
         else {

@@ -16,7 +16,7 @@ struct Cell {
 };
 
 int main(int argc, char** argv) {
-    float distanceThreshold = 300.0f;
+    float distanceThreshold = 500.0f;
     std::vector<Cell> cells;
 
     std::ifstream ifs(CONFIG_PATH);
@@ -42,7 +42,7 @@ int main(int argc, char** argv) {
                     distanceThreshold = std::stof(tokens[0]);
                 }
                 catch (...) {
-                    distanceThreshold = 300.0f;
+                    distanceThreshold = 500.0f;
                 }
             }
             else {
