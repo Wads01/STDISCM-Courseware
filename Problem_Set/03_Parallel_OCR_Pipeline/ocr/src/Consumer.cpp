@@ -6,6 +6,8 @@
 #include <opencv2/opencv.hpp>
 #include <memory>
 #include <mutex>
+#include <fstream>
+#include <chrono>
 
 static bool save_cleaned_image(const std::string& output_dir, const std::string& filename, const cv::Mat& img) {
 	try {
@@ -32,10 +34,16 @@ static void process_image_for_cleaning(const cv::Mat& src, cv::Mat& dst) {
 	cv::adaptiveThreshold(gray, dst,255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY,15,10);
 }
 
-Consumer::Consumer(std::string output_dir) : output_dir_(std::move(output_dir)) {}
+Consumer::Consumer(std::string output_dir) : output_dir_(std::move(output_dir)), pipeline_(std::make_unique<OCRPipeline>()) {}
 
 void Consumer::operator()() {
-	size_t processed =0;
+	size_t processed = 0;
+
+	// Check if OCR pipeline was initialized successfully
+	if (!pipeline_ || !pipeline_->isInitialized()) {
+		std::cerr << "[Consumer] OCR Pipeline not initialized, exiting consumer thread.\n";
+		return;
+	}
 
 	while (true) {
 		items_sem.acquire();
@@ -55,20 +63,37 @@ void Consumer::operator()() {
 		}
 
 		cv::Mat cleaned;
+		std::string extracted;
+		auto start = std::chrono::steady_clock::now();
 		try {
 			process_image_for_cleaning(item->mat, cleaned);
+			extracted = pipeline_->recognize(cleaned);
 		}
 		catch (const std::exception& ex) {
 			std::cerr << "[Consumer] Processing error for " << item->filename << ": " << ex.what() << "\n";
 			continue;
 		}
+		auto end = std::chrono::steady_clock::now();
+		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
+		// Save cleaned image
 		if (!save_cleaned_image(output_dir_, item->filename, cleaned)) {
 			std::cerr << "[Consumer] Failed to write cleaned image for: " << item->filename << "\n";
-		}
-		else {
+		} else {
 			std::cout << "[Consumer] Processed and saved: " << item->filename << "\n";
 			++processed;
+		}
+
+		// Append to CSV
+		int id = ++result_id_counter;
+		{
+			std::lock_guard<std::mutex> lock(result_csv_mutex);
+			std::ofstream ofs(result_csv_path, std::ios::app);
+			if (ofs) {
+				ofs << id << ",\"" << item->filename << "\",\"" << extracted << "\"," << ms << "\n";
+			} else {
+				std::cerr << "[Consumer] Failed to open result CSV: " << result_csv_path << "\n";
+			}
 		}
 	}
 

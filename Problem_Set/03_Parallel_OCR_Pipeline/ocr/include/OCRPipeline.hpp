@@ -9,6 +9,8 @@
 
 #include <opencv2/opencv.hpp>
 
+namespace tesseract { class TessBaseAPI; }
+
 // Shared item used by producer/consumer
 struct ImageItem {
 	cv::Mat mat;
@@ -22,11 +24,23 @@ extern std::mutex queue_mutex;
 extern std::counting_semaphore<1024> items_sem;
 extern std::atomic<bool> producer_finished;
 
-// Simple placeholder OCR pipeline class. Implementation can be added later.
+// Shared CSV/result resources
+extern std::string result_csv_path;
+extern std::mutex result_csv_mutex;
+extern std::atomic<int> result_id_counter;
+
+// Simple OCR pipeline class using Tesseract
 class OCRPipeline {
 public:
 	OCRPipeline();
+	~OCRPipeline();
 
-	// Placeholder recognition method: returns empty string for now.
+	// recognition method
 	std::string recognize(const cv::Mat& img);
+	
+	// Check if the API is properly initialized
+	bool isInitialized() const;
+
+private:
+	std::unique_ptr<tesseract::TessBaseAPI> api_;
 };

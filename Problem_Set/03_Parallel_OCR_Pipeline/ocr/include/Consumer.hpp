@@ -1,6 +1,10 @@
 #pragma once
 
 #include <string>
+#include <memory>
+
+// Forward declaration
+class OCRPipeline;
 
 class Consumer {
 public:
@@ -9,4 +13,5 @@ public:
 
 private:
 	std::string output_dir_;
+	std::unique_ptr<OCRPipeline> pipeline_;
 };

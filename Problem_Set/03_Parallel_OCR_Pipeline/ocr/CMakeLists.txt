@@ -15,5 +15,6 @@ target_include_directories(ocrLib PUBLIC
 
 target_link_libraries(ocrLib PUBLIC
 	${OpenCV_LIBS}
+	Tesseract::libtesseract
 	Threads::Threads
 )

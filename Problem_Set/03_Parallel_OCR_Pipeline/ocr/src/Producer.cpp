@@ -12,7 +12,8 @@
 #include <vector>
 #include <cctype>
 
-Producer::Producer(std::string dataset_dir) : dataset_dir_(std::move(dataset_dir)) {}
+Producer::Producer(std::string dataset_dir, int consumer_count)
+	: dataset_dir_(std::move(dataset_dir)), consumer_count_(consumer_count) {}
 
 static std::vector<std::filesystem::path> collect_png_paths(const std::string& dataset_dir) {
 	std::vector<std::filesystem::path> paths;
@@ -27,7 +28,7 @@ static std::vector<std::filesystem::path> collect_png_paths(const std::string& d
 			std::string ext_l;
 			ext_l.reserve(ext.size());
 			for (char c : ext) ext_l.push_back(std::tolower(static_cast<unsigned char>(c)));
-			if (ext_l != ".png") continue;
+			if (ext_l != ".png" && ext_l != ".jpg" && ext_l != ".jpeg") continue;
 			paths.push_back(path);
 		}
 		std::sort(paths.begin(), paths.end());
@@ -38,18 +39,20 @@ static std::vector<std::filesystem::path> collect_png_paths(const std::string& d
 	return paths;
 }
 
-void Producer::operator()() { 
+void Producer::operator()() {
 	try {
 		if (!std::filesystem::exists(dataset_dir_) || !std::filesystem::is_directory(dataset_dir_)) {
 			std::cerr << "Dataset directory '" << dataset_dir_ << "' does not exist or is not a directory.\n";
 			producer_finished.store(true);
-			auto end_item = std::make_shared<ImageItem>();
-			end_item->sentinel = true;
-			{
-				std::lock_guard<std::mutex> lock(queue_mutex);
-				image_queue.push(end_item);
+			for (int i =0; i < consumer_count_; ++i) {
+				auto end_item = std::make_shared<ImageItem>();
+				end_item->sentinel = true;
+				{
+					std::lock_guard<std::mutex> lock(queue_mutex);
+					image_queue.push(end_item);
+				}
+				items_sem.release();
 			}
-			items_sem.release();
 			return;
 		}
 
@@ -76,14 +79,15 @@ void Producer::operator()() {
 	catch (const std::exception& ex) {
 		std::cerr << "Producer exception: " << ex.what() << "\n";
 	}
-	{
+	// Push sentinel for each consumer
+	for (int i =0; i < consumer_count_; ++i) {
 		auto end_item = std::make_shared<ImageItem>();
 		end_item->sentinel = true;
 		std::lock_guard<std::mutex> lock(queue_mutex);
 		image_queue.push(end_item);
+		items_sem.release();
 	}
 
-	items_sem.release();
 	producer_finished.store(true);
 	std::cout << "[Producer] Finished scanning dataset.\n";
 }

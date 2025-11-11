@@ -1,15 +1,17 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
+set(CMAKE_TOOLCHAIN_FILE "D:/Misc/vcpkg/scripts/buildsystems/vcpkg.cmake" CACHE STRING "")
+
 project ("Parallel_OCR_Pipeline")
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-
 set(OpenCV_DIR "D:/Misc/opencv/build/x64/vc16/lib")
 
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
+find_package(Tesseract CONFIG REQUIRED)
 
 add_subdirectory(ocr)
 
