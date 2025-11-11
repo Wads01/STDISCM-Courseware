@@ -11,34 +11,28 @@
 
 namespace tesseract { class TessBaseAPI; }
 
-// Shared item used by producer/consumer
 struct ImageItem {
 	cv::Mat mat;
 	std::string filename;
 	bool sentinel = false;
 };
 
-// Shared queue and synchronization objects (definitions in OCRPipeline.cpp)
 extern std::queue<std::shared_ptr<ImageItem>> image_queue;
 extern std::mutex queue_mutex;
 extern std::counting_semaphore<1024> items_sem;
 extern std::atomic<bool> producer_finished;
 
-// Shared CSV/result resources
 extern std::string result_csv_path;
 extern std::mutex result_csv_mutex;
 extern std::atomic<int> result_id_counter;
 
-// Simple OCR pipeline class using Tesseract
 class OCRPipeline {
 public:
 	OCRPipeline();
 	~OCRPipeline();
 
-	// recognition method
 	std::string recognize(const cv::Mat& img);
 	
-	// Check if the API is properly initialized
 	bool isInitialized() const;
 
 private:

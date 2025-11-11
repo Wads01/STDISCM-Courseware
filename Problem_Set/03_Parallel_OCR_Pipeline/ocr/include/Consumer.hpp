@@ -3,7 +3,6 @@
 #include <string>
 #include <memory>
 
-// Forward declaration
 class OCRPipeline;
 
 class Consumer {

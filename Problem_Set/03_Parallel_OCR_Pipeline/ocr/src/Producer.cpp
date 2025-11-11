@@ -73,13 +73,11 @@ void Producer::operator()() {
 				image_queue.push(item);
 			}
 			items_sem.release();
-			std::cout << "[Producer] Enqueued: " << item->filename << "\n";
 		}
 	}
 	catch (const std::exception& ex) {
 		std::cerr << "Producer exception: " << ex.what() << "\n";
 	}
-	// Push sentinel for each consumer
 	for (int i =0; i < consumer_count_; ++i) {
 		auto end_item = std::make_shared<ImageItem>();
 		end_item->sentinel = true;
@@ -89,5 +87,4 @@ void Producer::operator()() {
 	}
 
 	producer_finished.store(true);
-	std::cout << "[Producer] Finished scanning dataset.\n";
 }

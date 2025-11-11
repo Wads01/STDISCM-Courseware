@@ -9,9 +9,8 @@
 #include "ocr/include/OCRPipeline.hpp"
 
 int main() {
-	// DATASET_DIRECTORY is set by CMake to ${CMAKE_SOURCE_DIR}/dataset
 	const std::filesystem::path default_dataset = DATASET_DIRECTORY;
-	const std::filesystem::path base_dir = default_dataset.parent_path(); // should be ${CMAKE_SOURCE_DIR}
+	const std::filesystem::path base_dir = default_dataset.parent_path();
 
 	std::cout << "Enter dataset directory name relative to project root (leave empty to use default): ";
 	std::string input;
@@ -22,14 +21,12 @@ int main() {
 		dataset_dir = default_dataset;
 	} else {
 		dataset_dir = base_dir / input;
-		// If invalid or empty directory, fallback to default
 		if (!std::filesystem::exists(dataset_dir) || !std::filesystem::is_directory(dataset_dir)) {
 			std::cerr << "Provided directory does not exist or is not a directory. Falling back to default dataset.\n";
 			dataset_dir = default_dataset;
 		}
 	}
 
-	// Ensure there is at least one image. If not, fallback to default.
 	bool has_images = false;
 	try {
 		for (const auto& entry : std::filesystem::directory_iterator(dataset_dir)) {
@@ -48,21 +45,18 @@ int main() {
 
 	std::cout << "Using dataset directory: " << dataset_dir.string() << "\n";
 
-	// Prepare result CSV in project root
 	std::filesystem::path result_csv = base_dir / "result.csv";
 	{
 		std::ofstream ofs(result_csv, std::ofstream::trunc);
 		ofs << "ID,filename,extracted_text,processing_time_ms\n";
 	}
 
-	// Set shared CSV path and reset counter
 	result_csv_path = result_csv.string();
 	result_id_counter.store(0);
 
-	// Number of consumer worker threads (at least2)
 	unsigned int hw = std::thread::hardware_concurrency();
 	unsigned int num_consumers = hw >1 ? hw :2u;
-	if (num_consumers <2) num_consumers =2;
+	if (num_consumers < 2) num_consumers = 2;
 
 	std::cout << "Starting pipeline with " << num_consumers << " worker threads.\n";
 

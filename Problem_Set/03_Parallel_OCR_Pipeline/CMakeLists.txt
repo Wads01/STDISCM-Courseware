@@ -22,6 +22,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE ocrLib)
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE 
 	DATASET_DIRECTORY=\"${CMAKE_SOURCE_DIR}/dataset\" 
 	CLEANED_DIRECTORY=\"${CMAKE_SOURCE_DIR}/cleaned\"
+	TESSDATA_DIRECTORY=\"${CMAKE_SOURCE_DIR}/tessdata\"
 )
 
 # Enable Hot Reload for MSVC compilers if supported.

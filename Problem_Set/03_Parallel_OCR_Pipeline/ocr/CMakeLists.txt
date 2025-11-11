@@ -18,3 +18,8 @@ target_link_libraries(ocrLib PUBLIC
 	Tesseract::libtesseract
 	Threads::Threads
 )
+
+target_compile_definitions(ocrLib PUBLIC 
+	TESSDATA_DIRECTORY=\"${CMAKE_SOURCE_DIR}/tessdata\"
+	CLEANED_DIRECTORY=\"${CMAKE_SOURCE_DIR}/cleaned\"
+)

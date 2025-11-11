@@ -8,6 +8,44 @@
 #include <mutex>
 #include <fstream>
 #include <chrono>
+#include <sstream>
+#include <algorithm>
+#include <cctype>
+
+static std::string escapeCsvText(const std::string& text) {
+	std::string result;
+	
+	for (char c : text) {
+		if (std::isalnum(static_cast<unsigned char>(c))) {
+			result += c;
+		} else if (std::isspace(static_cast<unsigned char>(c))) {
+			result += ' ';
+		}
+	}
+	
+	result.erase(result.begin(), std::find_if(result.begin(), result.end(), [](unsigned char ch) {
+		return !std::isspace(ch);
+	}));
+	result.erase(std::find_if(result.rbegin(), result.rend(), [](unsigned char ch) {
+		return !std::isspace(ch);
+	}).base(), result.end());
+	
+	std::string compressed;
+	bool lastWasSpace = false;
+	for (char c : result) {
+		if (std::isspace(static_cast<unsigned char>(c))) {
+			if (!lastWasSpace) {
+				compressed += ' ';
+				lastWasSpace = true;
+			}
+		} else {
+			compressed += c;
+			lastWasSpace = false;
+		}
+	}
+	
+	return compressed;
+}
 
 static bool save_cleaned_image(const std::string& output_dir, const std::string& filename, const cv::Mat& img) {
 	try {
@@ -39,7 +77,6 @@ Consumer::Consumer(std::string output_dir) : output_dir_(std::move(output_dir)),
 void Consumer::operator()() {
 	size_t processed = 0;
 
-	// Check if OCR pipeline was initialized successfully
 	if (!pipeline_ || !pipeline_->isInitialized()) {
 		std::cerr << "[Consumer] OCR Pipeline not initialized, exiting consumer thread.\n";
 		return;
@@ -76,23 +113,23 @@ void Consumer::operator()() {
 		auto end = std::chrono::steady_clock::now();
 		auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 
-		// Save cleaned image
 		if (!save_cleaned_image(output_dir_, item->filename, cleaned)) {
 			std::cerr << "[Consumer] Failed to write cleaned image for: " << item->filename << "\n";
 		} else {
-			std::cout << "[Consumer] Processed and saved: " << item->filename << "\n";
 			++processed;
 		}
 
-		// Append to CSV
 		int id = ++result_id_counter;
 		{
 			std::lock_guard<std::mutex> lock(result_csv_mutex);
-			std::ofstream ofs(result_csv_path, std::ios::app);
+			
+			std::string csv_path = result_csv_path;
+			std::replace(csv_path.begin(), csv_path.end(), '/', '\\');
+			
+			std::ofstream ofs(csv_path, std::ios::app);
 			if (ofs) {
-				ofs << id << ",\"" << item->filename << "\",\"" << extracted << "\"," << ms << "\n";
-			} else {
-				std::cerr << "[Consumer] Failed to open result CSV: " << result_csv_path << "\n";
+ 				std::string escaped_text = escapeCsvText(extracted);
+				ofs << id << ",\"" << item->filename << "\",\"" << escaped_text << "\"," << ms << "\n";
 			}
 		}
 	}
