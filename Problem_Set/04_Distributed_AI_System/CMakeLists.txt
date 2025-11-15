@@ -16,27 +16,13 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(CMAKE_BUILD_TYPE_INIT "Debug")
+set(CLIENT_BASE_DIR "${CMAKE_SOURCE_DIR}/Client" CACHE PATH "Client Base Directory")
+set(SERVER_BASE_DIR "${CMAKE_SOURCE_DIR}/Server" CACHE PATH "Server Base Directory")
 
-add_subdirectory(Qt)
-
-# Set to either "Client" or "Server"
-set(PROJECT_BUILD "Client" CACHE STRING "Build target: Client or Server")
-set_property(CACHE PROJECT_BUILD PROPERTY STRINGS "Client" "Server")
-
-if(PROJECT_BUILD STREQUAL "Client")
-	include(${CMAKE_SOURCE_DIR}/Client/Client.cmake)
-elseif(PROJECT_BUILD STREQUAL "Server")
-	include(${CMAKE_SOURCE_DIR}/Server/Server.cmake)
+if(${PROJECT_BUILD} STREQUAL "Client")
+	include(${CLIENT_BASE_DIR}/Client.cmake)
+elseif(${PROJECT_BUILD} STREQUAL "Server")
+	include(${SERVER_BASE_DIR}/Server.cmake)
 else()
 	message(FATAL_ERROR "Invalid Build Target: ${PROJECT_BUILD}")
 endif()
-
-add_executable(${CMAKE_PROJECT_NAME} main.cpp)
-
-target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE qt_wrapper)
-
-target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE 
-	CONFIG_PATH="${CMAKE_SOURCE_DIR}/config.txt"
-	DATASET_DIRECTORY="${CMAKE_SOURCE_DIR}/dataset" 
-)
