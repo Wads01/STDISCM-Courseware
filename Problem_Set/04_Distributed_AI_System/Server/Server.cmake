@@ -6,6 +6,8 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 	${OpenCV_LIBS}
 	Threads::Threads
 	Tesseract::libtesseract
+	gRPC::grpc++
+    protobuf::libprotobuf
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE 

@@ -4,11 +4,12 @@ project ("04_Distributed_AI_System")
 
 set(OpenCV_DIR "D:/Misc/opencv/build/x64/vc16/lib" CACHE PATH "OpenCV Lib Directory")
 set(CMAKE_PREFIX_PATH "C:/Qt/6.9.2/msvc2022_64/lib/cmake/Qt6" CACHE PATH "Qt CMake Directory")
-set(Tesseract_DIR "D:/Misc/vcpkg/installed/x64-windows/share/tesseract" CACHE PATH "Tesseract CMake Directory")
 
 find_package(OpenCV REQUIRED)
 find_package(Threads REQUIRED)
 find_package(Tesseract CONFIG REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
+find_package(Protobuf CONFIG REQUIRED)
 
 set(CMAKE_DISABLE_IN_SOURCE_BUILDS ON)
 

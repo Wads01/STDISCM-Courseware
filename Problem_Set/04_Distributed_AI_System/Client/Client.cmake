@@ -7,6 +7,8 @@ add_executable(${CMAKE_PROJECT_NAME} ${CLIENT_BASE_DIR}/clientMain.cpp)
 target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE 
 	Threads::Threads
 	qt_wrapper
+	gRPC::grpc++
+    protobuf::libprotobuf
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE 
