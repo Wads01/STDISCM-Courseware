@@ -20,6 +20,8 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CLIENT_BASE_DIR "${CMAKE_SOURCE_DIR}/Client" CACHE PATH "Client Base Directory")
 set(SERVER_BASE_DIR "${CMAKE_SOURCE_DIR}/Server" CACHE PATH "Server Base Directory")
 
+add_subdirectory(proto)
+
 if(${PROJECT_BUILD} STREQUAL "Client")
 	include(${CLIENT_BASE_DIR}/Client.cmake)
 elseif(${PROJECT_BUILD} STREQUAL "Server")

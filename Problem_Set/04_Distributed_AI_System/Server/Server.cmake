@@ -8,6 +8,7 @@ target_link_libraries(${CMAKE_PROJECT_NAME} PRIVATE
 	Tesseract::libtesseract
 	gRPC::grpc++
     protobuf::libprotobuf
+	proto_library
 )
 
 target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE 
