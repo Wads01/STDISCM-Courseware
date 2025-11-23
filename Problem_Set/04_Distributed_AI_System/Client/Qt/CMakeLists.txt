@@ -7,6 +7,7 @@ set(CMAKE_AUTOMOC ON)
 add_library(qt_wrapper STATIC 
 	${CMAKE_CURRENT_SOURCE_DIR}/src/MainWindow.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/include/MainWindow.hpp
+	${CMAKE_CURRENT_SOURCE_DIR}/include/ImageResultWidget.hpp
 )
 
 target_include_directories(qt_wrapper PUBLIC

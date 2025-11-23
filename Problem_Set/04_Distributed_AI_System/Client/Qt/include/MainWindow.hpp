@@ -1,33 +1,53 @@
 #pragma once
+
 #include <QMainWindow>
-#include <QPointF>
+#include <QString>
+#include <QStringList>
 #include <vector>
+#include <memory>
 
 class QPushButton;
-class VoronoiWidget;
-class QTimer;
+class QProgressBar;
+class QScrollArea;
+class QVBoxLayout;
+class QLabel;
+class QWidget;
+class ImageResultWidget;
 
+// Main application window
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
-    explicit MainWindow(const std::vector<QPointF>& sites, const std::vector<float>& temps, float distanceThreshold, QWidget* parent = nullptr);
+    explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
+signals:
+    void uploadImages(const QStringList& imagePaths);
+    void resultReceived(const QString& imageId, const QString& text, bool success, const QString& error);
+
 private slots:
-    void onLoadConfig();
-    void onPrintTemperaturesPeriodically();
-    void onUpdateGUI();
+    void onUploadClicked();
+    void onResultReceived(const QString& imageId, const QString& text, bool success, const QString& error);
+    void onProgressUpdated(int completed, int total);
 
 private:
-    void startSimulation();
-    void stopSimulation();
+    void clearResults();
+    void addImageWidget(const QString& imagePath, const QString& imageId);
+    void updateStatusLabel();
+    QString generateImageId();
+    QString generateBatchId();
 
-    QPushButton* loadButton_;
-    VoronoiWidget* canvas_;
-    QTimer* printTimer_;
-    QTimer* updateTimer_;
+    QPushButton* uploadButton_;
+    QProgressBar* progressBar_;
+    QLabel* statusLabel_;
+    QScrollArea* scrollArea_;
+    QWidget* resultsContainer_;
+    QVBoxLayout* resultsLayout_;
     
-    static constexpr int PRINT_INTERVAL_MS = 1000;
-    static constexpr int SENSOR_UPDATE_MS = 500;
-    static constexpr int GUI_UPDATE_MS = 100;
+    std::vector<std::unique_ptr<ImageResultWidget>> imageWidgets_;
+    
+    QString currentBatchId_;
+    int totalImages_;
+    int completedImages_;
+    int nextImageId_;
 };
