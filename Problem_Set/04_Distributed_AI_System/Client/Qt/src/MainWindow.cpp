@@ -1,5 +1,6 @@
 ﻿#include "MainWindow.hpp"
 #include "ImageResultWidget.hpp"
+#include "OCRClient.hpp"
 
 #include <QPushButton>
 #include <QVBoxLayout>
@@ -11,22 +12,32 @@
 #include <QProgressBar>
 #include <QLabel>
 #include <QPixmap>
+#include <QPainter>
 #include <QDateTime>
 #include <QDir>
-#include <QDirIterator>
+#include <QBuffer>
 
-ImageResultWidget::ImageResultWidget(const QString& imagePath, const QString& imageId, QWidget* parent) : QWidget(parent)
+ImageResultWidget::ImageResultWidget(const QString& imagePath, const QString& imageId, QWidget* parent) 
+    : QWidget(parent)
     , imageId_(imageId)
 {
     auto* layout = new QHBoxLayout(this);
     layout->setSpacing(10);
     
-    // Image thumbnail
+    // Original image thumbnail
     imageLabel_ = new QLabel(this);
     QPixmap pixmap(imagePath);
     imageLabel_->setPixmap(pixmap.scaled(150, 150, Qt::KeepAspectRatio, Qt::SmoothTransformation));
     imageLabel_->setFixedSize(150, 150);
     imageLabel_->setStyleSheet("border: 1px solid #555;");
+    imageLabel_->setAlignment(Qt::AlignCenter);
+  
+    // Cleaned image (initially empty)
+    cleanedImageLabel_ = new QLabel(this);
+    cleanedImageLabel_->setText("Processing...");
+    cleanedImageLabel_->setFixedSize(150, 150);
+    cleanedImageLabel_->setStyleSheet("border: 1px solid #555; color: #888;");
+    cleanedImageLabel_->setAlignment(Qt::AlignCenter);
  
     // Result text area
     auto* rightLayout = new QVBoxLayout();
@@ -40,20 +51,50 @@ ImageResultWidget::ImageResultWidget(const QString& imagePath, const QString& im
     resultLabel_->setMinimumHeight(100);
     resultLabel_->setAlignment(Qt::AlignTop | Qt::AlignLeft);
     resultLabel_->setStyleSheet("padding: 5px; background-color: #2b2b2b; border: 1px solid #555;");
-    
+
     rightLayout->addWidget(statusLabel_);
     rightLayout->addWidget(resultLabel_);
     
     layout->addWidget(imageLabel_);
+    layout->addWidget(cleanedImageLabel_);
     layout->addLayout(rightLayout, 1);
     
     setStyleSheet("QWidget { border: 1px solid #555; border-radius: 5px; padding: 5px; }");
 }
 
-void ImageResultWidget::setResult(const QString& ocrText) {
+void ImageResultWidget::setResult(const QString& ocrText, const QByteArray& cleanedImageData) {
     statusLabel_->setText("✓ Completed");
     statusLabel_->setStyleSheet("color: green; font-weight: bold;");
     resultLabel_->setText(ocrText.isEmpty() ? "(No text detected)" : ocrText);
+    
+    // Display cleaned image with OCR text overlaid
+    if (!cleanedImageData.isEmpty()) {
+        QPixmap cleanedPixmap;
+        cleanedPixmap.loadFromData(cleanedImageData);
+        
+        if (!cleanedPixmap.isNull()) {
+            // Create a pixmap with label at bottom
+            int labelHeight = 30;
+            QPixmap labeledPixmap(cleanedPixmap.width(), cleanedPixmap.height() + labelHeight);
+            labeledPixmap.fill(Qt::white);
+            
+            QPainter painter(&labeledPixmap);
+            painter.drawPixmap(0, 0, cleanedPixmap);
+        
+            // Draw OCR text at bottom
+            QFont font = painter.font();
+            font.setPixelSize(12);
+            font.setBold(true);
+            painter.setFont(font);
+            painter.setPen(Qt::black);
+         
+            QRect textRect(0, cleanedPixmap.height(), cleanedPixmap.width(), labelHeight);
+            QString displayText = ocrText.length() > 50 ? ocrText.left(47) + "..." : ocrText;
+            painter.drawText(textRect, Qt::AlignCenter, displayText);
+      
+            cleanedImageLabel_->setPixmap(labeledPixmap.scaled(150, 180, Qt::KeepAspectRatio, Qt::SmoothTransformation));
+        }
+    }
 }
 
 void ImageResultWidget::setError(const QString& errorMsg) {
@@ -61,16 +102,25 @@ void ImageResultWidget::setError(const QString& errorMsg) {
     statusLabel_->setStyleSheet("color: red; font-weight: bold;");
     resultLabel_->setText(errorMsg);
     resultLabel_->setStyleSheet("padding: 5px; background-color: #3d2020; color: #ff6666; border: 1px solid #aa3333;");
+    
+    cleanedImageLabel_->setText("Error");
+    cleanedImageLabel_->setStyleSheet("border: 1px solid #aa3333; color: #ff6666;");
 }
 
 
-MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
+MainWindow::MainWindow(QWidget* parent) 
+    : QMainWindow(parent)
     , totalImages_(0)
     , completedImages_(0)
     , nextImageId_(1)
 {
     setWindowTitle("Distributed OCR Client");
     setMinimumSize(900, 700);
+    
+    // Initialize gRPC client
+    ocrClient_ = std::make_unique<OCRClient>("localhost:50051", this);
+    connect(ocrClient_.get(), &OCRClient::resultReceived, this, &MainWindow::onOCRResultReceived);
+    connect(ocrClient_.get(), &OCRClient::connectionError, this, &MainWindow::onConnectionError);
     
     // Central widget
     auto* central = new QWidget(this);
@@ -91,13 +141,13 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     progressBar_->setFixedHeight(15);
     progressBar_->setStyleSheet(
         "QProgressBar {"
-            "   border: none;"
-            "   background-color: #3a3a3a;"
-            "   border-radius: 7px;"
+        "   border: none;"
+        "   background-color: #3a3a3a;"
+        "   border-radius: 7px;"
         "}"
         "QProgressBar::chunk {"
-            "   background-color: #8b5cf6;"
-            "   border-radius: 7px;"
+        "   background-color: #8b5cf6;"
+        "   border-radius: 7px;"
         "}"
     );
     
@@ -127,7 +177,6 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     
     // Connect signals
     connect(uploadButton_, &QPushButton::clicked, this, &MainWindow::onUploadClicked);
-    connect(this, &MainWindow::resultReceived, this, &MainWindow::onResultReceived);
 }
 
 MainWindow::~MainWindow() = default;
@@ -138,7 +187,7 @@ void MainWindow::onUploadClicked() {
         "Do you want to select a directory?\n\nYes = Select Directory\nNo = Select Files",
         QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel
     );
-    
+  
     QStringList filePaths;
     
     if (reply == QMessageBox::Yes) {
@@ -151,10 +200,10 @@ void MainWindow::onUploadClicked() {
         if (!dirPath.isEmpty()) {
             QDir dir(dirPath);
             QStringList filters;
-            filters << "*.jpg" << "*.jpeg" << "*.JPG" << "*.JPEG" 
-            << "*.png" << "*.PNG";
+            filters << "*.jpg" << "*.jpeg" << "*.JPG" << "*.JPEG" << "*.png" << "*.PNG";
          
             QFileInfoList fileList = dir.entryInfoList(filters, QDir::Files);
+
             for (const QFileInfo& fileInfo : fileList) {
                 filePaths.append(fileInfo.absoluteFilePath());
             }
@@ -181,7 +230,7 @@ void MainWindow::onUploadClicked() {
     
     // Generate new batch ID if starting fresh
     if (totalImages_ == 0) {
-      currentBatchId_ = generateBatchId();
+        currentBatchId_ = generateBatchId();
     }
     
     // Add images to UI
@@ -196,16 +245,16 @@ void MainWindow::onUploadClicked() {
     
     updateStatusLabel();
     
-    // TODO: Emit signal to gRPC client to upload images
-    emit uploadImages(filePaths);
+    // Upload to server via gRPC
+    ocrClient_->uploadImages(filePaths, currentBatchId_);
 }
 
-void MainWindow::onResultReceived(const QString& imageId, const QString& text, bool success, const QString& error) {
-    // Find the widget with matching imageId
+void MainWindow::onOCRResultReceived(const QString& imageId, const QString& text, const QByteArray& cleanedImage, bool success, const QString& error) {
+    // Find the widget with matching imageId and update with cleaned image
     for (auto& widget : imageWidgets_) {
         if (widget->getImageId() == imageId) {
             if (success) {
-                widget->setResult(text);
+                widget->setResult(text, cleanedImage);
             } else {
                 widget->setError(error);
             }
@@ -216,6 +265,11 @@ void MainWindow::onResultReceived(const QString& imageId, const QString& text, b
     completedImages_++;
     progressBar_->setValue(completedImages_);
     updateStatusLabel();
+}
+
+void MainWindow::onConnectionError(const QString& error) {
+    QMessageBox::critical(this, "Connection Error", 
+    QString("Failed to connect to OCR server:\n%1").arg(error));
 }
 
 void MainWindow::onProgressUpdated(int completed, int total) {
@@ -235,12 +289,13 @@ void MainWindow::updateStatusLabel() {
         statusLabel_->setText(QString("%1 / %2 images processed (%3%)")
             .arg(completedImages_)
             .arg(totalImages_)
-            .arg(percentage));
+            .arg(percentage)
+        );
   
         if (completedImages_ == totalImages_) {
             statusLabel_->setStyleSheet("font-size: 14pt; color: #8b5cf6; font-weight: bold;");
         } else {
-            statusLabel_->setStyleSheet("font-size: 14pt; color: #aaa;");
+         statusLabel_->setStyleSheet("font-size: 14pt; color: #aaa;");
         }
     }
 }
@@ -251,8 +306,8 @@ void MainWindow::clearResults() {
     // Clear layout
     QLayoutItem* item;
     while ((item = resultsLayout_->takeAt(0)) != nullptr) {
-    delete item->widget();
-    delete item;
+        delete item->widget();
+        delete item;
     }
   
     totalImages_ = 0;

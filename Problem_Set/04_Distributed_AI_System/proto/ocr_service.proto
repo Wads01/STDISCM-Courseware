@@ -18,4 +18,5 @@ message OCRResult {
 	bool success = 3;
 	string error_message = 4;
 	string batch_id = 5;
+	bytes cleaned_image_data = 6;
 }

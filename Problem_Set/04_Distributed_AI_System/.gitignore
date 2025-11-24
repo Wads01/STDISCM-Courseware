@@ -1,0 +1,110 @@
+# Build directories
+build/
+build-*/
+out/
+bin/
+lib/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+cmake_install.cmake
+install_manifest.txt
+CTestTestfile.cmake
+_deps/
+*.cmake.in
+
+# Visual Studio
+.vs/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Rider / JetBrains
+.idea/
+*.iml
+
+# Compiled Object files
+*.o
+*.obj
+*.lo
+*.slo
+*.ko
+*.elf
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Compiled Static libraries
+*.a
+*.lib
+*.la
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Qt
+*.autosave
+*.pro.user
+*.pro.user.*
+moc_*.cpp
+moc_*.h
+qrc_*.cpp
+ui_*.h
+*.qm
+.qmake.stash
+
+# Generated Protobuf files
+proto/generated/
+*.pb.cc
+*.pb.h
+*.grpc.pb.cc
+*.grpc.pb.h
+
+# Tesseract data (if large)
+# tessdata/
+
+# OCR output
+ocr_results.csv
+cleaned/
+output/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Package manager
+vcpkg_installed/
+packages/
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+
+# Config files with sensitive data (if any)
+config_local.txt

@@ -3,6 +3,7 @@
 #include <QMainWindow>
 #include <QString>
 #include <QStringList>
+#include <QByteArray>
 #include <vector>
 #include <memory>
 
@@ -13,21 +14,22 @@ class QVBoxLayout;
 class QLabel;
 class QWidget;
 class ImageResultWidget;
+class OCRClient;
 
 // Main application window
 class MainWindow : public QMainWindow {
-    Q_OBJECT
+  Q_OBJECT
 public:
     explicit MainWindow(QWidget* parent = nullptr);
     ~MainWindow();
 
-signals:
-    void uploadImages(const QStringList& imagePaths);
-    void resultReceived(const QString& imageId, const QString& text, bool success, const QString& error);
+public slots:
+    void onOCRResultReceived(const QString& imageId, const QString& text,
+    const QByteArray& cleanedImage, bool success, const QString& error);
+    void onConnectionError(const QString& error);
 
 private slots:
     void onUploadClicked();
-    void onResultReceived(const QString& imageId, const QString& text, bool success, const QString& error);
     void onProgressUpdated(int completed, int total);
 
 private:
@@ -45,6 +47,7 @@ private:
     QVBoxLayout* resultsLayout_;
     
     std::vector<std::unique_ptr<ImageResultWidget>> imageWidgets_;
+    std::unique_ptr<OCRClient> ocrClient_;
     
     QString currentBatchId_;
     int totalImages_;
