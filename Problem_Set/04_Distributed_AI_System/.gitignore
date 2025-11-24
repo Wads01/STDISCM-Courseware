@@ -108,3 +108,5 @@ packages/
 
 # Config files with sensitive data (if any)
 config_local.txt
+
+dataset/
