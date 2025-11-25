@@ -15,7 +15,8 @@
 struct OCRWorkItem {
 	ocr::ImageRequest request;
 	grpc::ServerReaderWriter<ocr::OCRResult, ocr::ImageRequest>* stream;
-	std::mutex* stream_mutex;
+	std::shared_ptr<std::mutex> stream_mutex;
+	std::shared_ptr<std::atomic<size_t>> pending_work_count; // Track remaining work for this client
 	bool sentinel = false;
 };
 
@@ -29,16 +30,16 @@ public:
 private:
 	void workerThread(unsigned int worker_id);
 	void processWorkItem(const OCRWorkItem& work_item, unsigned int worker_id);
-
+	
 	std::vector<std::unique_ptr<OCRPipeline>> pipelines_;
 	std::vector<std::thread> workers_;
 	unsigned int num_workers_;
-
+	
 	// Bounded queue with flow control
 	std::queue<OCRWorkItem> work_queue_;
 	std::mutex queue_mutex_;
 	std::condition_variable queue_cv_;
-	std::counting_semaphore<1024> queue_slots_; // Available slots in queue
+	std::counting_semaphore<1024> queue_slots_;
 	std::atomic<bool> shutdown_;
 	size_t max_queue_size_;
 };

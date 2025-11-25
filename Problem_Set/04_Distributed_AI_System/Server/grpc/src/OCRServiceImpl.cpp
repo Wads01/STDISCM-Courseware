@@ -111,108 +111,125 @@ void OCRServiceImpl::workerThread(unsigned int worker_id) {
 }
 
 void OCRServiceImpl::processWorkItem(const OCRWorkItem& work_item, unsigned int worker_id) {
-    const auto& request = work_item.request;
+	const auto& request = work_item.request;
 
-    ocr::OCRResult result;
-    result.set_image_id(request.image_id());
-    result.set_batch_id(request.batch_id());
+	ocr::OCRResult result;
+	result.set_image_id(request.image_id());
+	result.set_batch_id(request.batch_id());
 
-    // Report current queue depth to client for monitoring
-    {
-        std::lock_guard<std::mutex> lock(queue_mutex_);
-        result.set_queue_depth(static_cast<int>(work_queue_.size()));
-    }
+	// Report current queue depth to client for monitoring
+	{
+		std::lock_guard<std::mutex> lock(queue_mutex_);
+		result.set_queue_depth(static_cast<int>(work_queue_.size()));
+	}
 
-    try {
-        // Decode image from bytes
-        std::vector<uchar> image_data(request.image_data().begin(), request.image_data().end());
-        cv::Mat img = cv::imdecode(image_data, cv::IMREAD_COLOR);
+	try {
+		// Decode image from bytes
+		std::vector<uchar> image_data(request.image_data().begin(), request.image_data().end());
+		cv::Mat img = cv::imdecode(image_data, cv::IMREAD_COLOR);
 
-        if (img.empty()) {
-            result.set_success(false);
-            result.set_error_message("Failed to decode image");
-            std::cerr << "Worker " << worker_id << ": Failed to decode image: " << request.image_id() << std::endl;
-        } else {
-            // Preprocess image using OCRPipeline method
-            cv::Mat cleaned = pipelines_[worker_id]->preprocessImage(img);
+		if (img.empty()) {
+			result.set_success(false);
+			result.set_error_message("Failed to decode image");
+			std::cerr << "Worker " << worker_id << ": Failed to decode image: " << request.image_id() << std::endl;
+		} else {
+			// Preprocess image using OCRPipeline method
+			cv::Mat cleaned = pipelines_[worker_id]->preprocessImage(img);
 
-            if (cleaned.empty()) {
-                result.set_success(false);
-                result.set_error_message("Failed to preprocess image");
-                std::cerr << "Worker " << worker_id << ": Failed to preprocess image: " << request.image_id() << std::endl;
-            } else {
-                // Run OCR on the cleaned image
-                std::string ocr_text = pipelines_[worker_id]->recognize(cleaned);
+			if (cleaned.empty()) {
+				result.set_success(false);
+				result.set_error_message("Failed to preprocess image");
+				std::cerr << "Worker " << worker_id << ": Failed to preprocess image: " << request.image_id() << std::endl;
+			} else {
+				// Run OCR on the cleaned image
+				std::string ocr_text = pipelines_[worker_id]->recognize(cleaned);
 
-                // Clean the OCR text output
-                std::string cleaned_text = cleanText(ocr_text);
+				// Clean the OCR text output
+				std::string cleaned_text = cleanText(ocr_text);
 
-                result.set_success(true);
-                result.set_extracted_text(cleaned_text);
+				result.set_success(true);
+				result.set_extracted_text(cleaned_text);
 
-                // Encode cleaned image back to bytes (as PNG)
-                std::vector<uchar> cleaned_data;
-                cv::imencode(".png", cleaned, cleaned_data);
-                result.set_cleaned_image_data(cleaned_data.data(), cleaned_data.size());
+				// Encode cleaned image back to bytes (as PNG)
+				std::vector<uchar> cleaned_data;
+				cv::imencode(".png", cleaned, cleaned_data);
+				result.set_cleaned_image_data(cleaned_data.data(), cleaned_data.size());
 
-                std::cout << "Worker " << worker_id << ": Processed image: " << request.image_id()
-                        << " - Text length: " << cleaned_text.length() << std::endl;
-            }
-        }
-    } catch (const std::exception& e) {
-        result.set_success(false);
-        result.set_error_message(std::string("Exception: ") + e.what());
-        std::cerr << "Worker " << worker_id << ": Exception processing " << request.image_id() << ": " << e.what() << std::endl;
-    }
+				std::cout << "Worker " << worker_id << ": Processed image: " << request.image_id()
+						<< " - Text length: " << cleaned_text.length() << std::endl;
+			}
+		}
+	} catch (const std::exception& e) {
+		result.set_success(false);
+		result.set_error_message(std::string("Exception: ") + e.what());
+		std::cerr << "Worker " << worker_id << ": Exception processing " << request.image_id() << ": " << e.what() << std::endl;
+	}
 
-    // Send result back (thread-safe)
-    {
-        std::lock_guard<std::mutex> lock(*work_item.stream_mutex);
-        if (!work_item.stream->Write(result))
-            std::cerr << "Worker " << worker_id << ": Failed to write result for: " << request.image_id() << std::endl;
-    }
+	// Send result back (thread-safe)
+	{
+		std::lock_guard<std::mutex> lock(*work_item.stream_mutex);
+		if (!work_item.stream->Write(result)) {
+			std::cerr << "Worker " << worker_id << ": Failed to write result for: " << request.image_id() << std::endl;
+		}
+	}
+
+	// Decrement pending work count for this client
+	if (work_item.pending_work_count) {
+		work_item.pending_work_count->fetch_sub(1);
+	}
 }
 
 grpc::Status OCRServiceImpl::ProcessImages(grpc::ServerContext* context, grpc::ServerReaderWriter<ocr::OCRResult, ocr::ImageRequest>* stream) {
-    std::cout << "Client connected for image processing" << std::endl;
+	std::cout << "Client connected for image processing" << std::endl;
 
-    std::mutex stream_mutex;
-    size_t images_received = 0;
-    std::atomic<size_t> current_queue_size{0};
+	// Use shared_ptr to ensure mutex lifetime extends beyond this function if needed
+	auto stream_mutex = std::make_shared<std::mutex>();
+	auto pending_work_count = std::make_shared<std::atomic<size_t>>(0);
+	size_t images_received = 0;
 
-    ocr::ImageRequest request;
-    while (stream->Read(&request)) {
-        images_received++;
-        std::cout << "Received image " << images_received << ": " << request.image_id() << " (batch: " << request.batch_id() << ")" << std::endl;
+	ocr::ImageRequest request;
+	while (stream->Read(&request)) {
+		images_received++;
+		std::cout << "Received image " << images_received << ": " << request.image_id() << " (batch: " << request.batch_id() << ")" << std::endl;
 
-        // Wait for an available queue slot (backpressure mechanism)
-        // This blocks if the queue is full, preventing server overload
-        queue_slots_.acquire();
+		// Wait for an available queue slot (backpressure mechanism)
+		// This blocks if the queue is full, preventing server overload
+		queue_slots_.acquire();
 
-        if (shutdown_.load()) {
-            std::cout << "Server shutting down, rejecting new work" << std::endl;
-            queue_slots_.release();
-            break;
-        }
+		if (shutdown_.load()) {
+			std::cout << "Server shutting down, rejecting new work" << std::endl;
+			queue_slots_.release();
+			break;
+		}
 
-        // Add work item to queue
-        OCRWorkItem work_item;
-        work_item.request = request;
-        work_item.stream = stream;
-        work_item.stream_mutex = &stream_mutex;
-        work_item.sentinel = false;
+		// Increment pending work count
+		pending_work_count->fetch_add(1);
 
-        {
-            std::lock_guard<std::mutex> lock(queue_mutex_);
-            work_queue_.push(work_item);
-            current_queue_size.store(work_queue_.size());
-        }
+		// Add work item to queue
+		OCRWorkItem work_item;
+		work_item.request = request;
+		work_item.stream = stream;
+		work_item.stream_mutex = stream_mutex;
+		work_item.pending_work_count = pending_work_count;
+		work_item.sentinel = false;
 
-        queue_cv_.notify_one();
+		{
+			std::lock_guard<std::mutex> lock(queue_mutex_);
+			work_queue_.push(work_item);
+		}
 
-        std::cout << "Queued image for processing (queue size: " << current_queue_size.load() << "/" << max_queue_size_ << ")" << std::endl;
-    }
+		queue_cv_.notify_one();
 
-    std::cout << "Client disconnected (received " << images_received << " images)" << std::endl;
-    return grpc::Status::OK;
+		std::cout << "Queued image for processing (pending: " << pending_work_count->load() << ")" << std::endl;
+	}
+
+	std::cout << "Client stream closed, waiting for " << pending_work_count->load() << " remaining items..." << std::endl;
+
+	// Wait for all work items from this client to be processed
+	while (pending_work_count->load() > 0) {
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+
+	std::cout << "Client disconnected (received " << images_received << " images, all processed)" << std::endl;
+	return grpc::Status::OK;
 }
