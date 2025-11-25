@@ -32,6 +32,7 @@ public:
 	~OCRPipeline();
 
 	std::string recognize(const cv::Mat& img);
+	cv::Mat preprocessImage(const cv::Mat& img);
 	
 	bool isInitialized() const;
 

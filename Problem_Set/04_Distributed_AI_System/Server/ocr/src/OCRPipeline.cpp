@@ -52,6 +52,47 @@ bool OCRPipeline::isInitialized() const {
 	return api_ != nullptr;
 }
 
+cv::Mat OCRPipeline::preprocessImage(const cv::Mat& src) {
+	cv::Mat dst;
+	
+	if (src.empty()) {
+		std::cerr << "Empty image provided for preprocessing!" << std::endl;
+		return dst;
+	}
+	
+	try {
+		cv::Mat gray;
+		if (src.channels() == 3) {
+			cv::cvtColor(src, gray, cv::COLOR_BGR2GRAY);
+		} else if (src.channels() == 1) {
+			gray = src.clone();
+		} else {
+			std::cerr << "Unsupported number of channels: " << src.channels() << std::endl;
+			return dst;
+		}
+		
+		// Apply median blur to reduce noise
+		cv::medianBlur(gray, gray, 3);
+		
+		// Morphological opening to remove small noise
+		cv::Mat kernel = cv::getStructuringElement(cv::MORPH_ELLIPSE, cv::Size(3, 3));
+		cv::morphologyEx(gray, gray, cv::MORPH_OPEN, kernel);
+		
+		// Adaptive thresholding for better contrast
+		cv::adaptiveThreshold(gray, dst, 255, cv::ADAPTIVE_THRESH_GAUSSIAN_C, cv::THRESH_BINARY, 15, 10);
+		
+		return dst;
+	}
+	catch (const std::exception& e) {
+		std::cerr << "Exception in preprocessImage: " << e.what() << std::endl;
+		return cv::Mat();
+	}
+	catch (...) {
+		std::cerr << "Unknown exception in preprocessImage" << std::endl;
+		return cv::Mat();
+	}
+}
+
 std::string OCRPipeline::recognize(const cv::Mat& img) {
 	if (!api_) {
 		std::cerr << "Tesseract API not initialized!" << std::endl;
