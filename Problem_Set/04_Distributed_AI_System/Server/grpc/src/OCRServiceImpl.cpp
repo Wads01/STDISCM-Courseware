@@ -54,8 +54,8 @@ OCRServiceImpl::~OCRServiceImpl() {
 
 // Helper function to clean OCR text output
 static std::string cleanText(const std::string& text) {
-  std::string result;
-  result.reserve(text.length());
+	std::string result;
+	result.reserve(text.length());
 
     // Only keep alphanumeric characters and spaces
     for (char c : text) {
