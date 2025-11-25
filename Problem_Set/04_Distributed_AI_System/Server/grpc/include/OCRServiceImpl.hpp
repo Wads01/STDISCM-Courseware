@@ -11,18 +11,19 @@
 #include <condition_variable>
 #include <semaphore>
 #include <atomic>
+#include <chrono>
 
 struct OCRWorkItem {
 	ocr::ImageRequest request;
 	grpc::ServerReaderWriter<ocr::OCRResult, ocr::ImageRequest>* stream;
 	std::shared_ptr<std::mutex> stream_mutex;
-	std::shared_ptr<std::atomic<size_t>> pending_work_count; // Track remaining work for this client
+	std::shared_ptr<std::atomic<size_t>> pending_work_count;
 	bool sentinel = false;
 };
 
 class OCRServiceImpl final : public ocr::OCRService::Service {
 public:
-	OCRServiceImpl(unsigned int num_workers = 0, size_t max_queue_size = 100);
+	OCRServiceImpl(unsigned int num_workers = 0, size_t max_queue_size = 100, unsigned int processing_delay_ms = 0);
 	~OCRServiceImpl();
 
 	grpc::Status ProcessImages(grpc::ServerContext* context, grpc::ServerReaderWriter<ocr::OCRResult, ocr::ImageRequest>* stream) override;
@@ -42,4 +43,6 @@ private:
 	std::counting_semaphore<1024> queue_slots_;
 	std::atomic<bool> shutdown_;
 	size_t max_queue_size_;
+	
+	std::chrono::milliseconds processing_delay_;
 };

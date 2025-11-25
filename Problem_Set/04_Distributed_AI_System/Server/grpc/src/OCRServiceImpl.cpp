@@ -7,11 +7,12 @@
 #include <cctype>
 #include <thread>
 
-OCRServiceImpl::OCRServiceImpl(unsigned int num_workers, size_t max_queue_size)
+OCRServiceImpl::OCRServiceImpl(unsigned int num_workers, size_t max_queue_size, unsigned int processing_delay_ms)
     : num_workers_(num_workers == 0 ? std::max(1u, std::thread::hardware_concurrency()) : num_workers)
     , shutdown_(false)
     , max_queue_size_(max_queue_size)
     , queue_slots_(max_queue_size)
+    , processing_delay_(processing_delay_ms)
 {
     // Create OCR pipeline for each worker
     pipelines_.reserve(num_workers_);
@@ -25,14 +26,12 @@ OCRServiceImpl::OCRServiceImpl(unsigned int num_workers, size_t max_queue_size)
     for (unsigned int i = 0; i < num_workers_; ++i)
         workers_.emplace_back(&OCRServiceImpl::workerThread, this, i);
 
-  std::cout << "OCR Service initialized with " << num_workers_ << " workers and max queue size "
-        << max_queue_size_ << std::endl;
+	std::cout << "OCR Service initialized with " << num_workers_ << " workers and max queue size " << max_queue_size_ << std::endl;
 }
 
 OCRServiceImpl::~OCRServiceImpl() {
     shutdown_.store(true);
 
-    // Send sentinel work items to wake up all workers
     {
         std::lock_guard<std::mutex> lock(queue_mutex_);
         for (unsigned int i = 0; i < num_workers_; ++i) {
@@ -43,7 +42,6 @@ OCRServiceImpl::~OCRServiceImpl() {
     }
     queue_cv_.notify_all();
 
-    // Wait for all workers to finish
     for (auto& worker : workers_) {
         if (worker.joinable())
             worker.join();
@@ -52,7 +50,6 @@ OCRServiceImpl::~OCRServiceImpl() {
     std::cout << "OCR Service shutdown complete" << std::endl;
 }
 
-// Helper function to clean OCR text output
 static std::string cleanText(const std::string& text) {
 	std::string result;
 	result.reserve(text.length());
@@ -84,7 +81,6 @@ void OCRServiceImpl::workerThread(unsigned int worker_id) {
     while (!shutdown_.load()) {
         OCRWorkItem work_item;
 
-        // Wait for work
         {
             std::unique_lock<std::mutex> lock(queue_mutex_);
             queue_cv_.wait(lock, [this] { return shutdown_.load() || !work_queue_.empty(); });
@@ -96,14 +92,11 @@ void OCRServiceImpl::workerThread(unsigned int worker_id) {
             work_queue_.pop();
         }
 
-        // Check for sentinel
         if (work_item.sentinel)
             break;
 
-        // Process the work item
         processWorkItem(work_item, worker_id);
 
-        // Release a queue slot
         queue_slots_.release();
     }
 
@@ -165,7 +158,10 @@ void OCRServiceImpl::processWorkItem(const OCRWorkItem& work_item, unsigned int 
 		std::cerr << "Worker " << worker_id << ": Exception processing " << request.image_id() << ": " << e.what() << std::endl;
 	}
 
-	// Send result back (thread-safe)
+	if (processing_delay_.count() > 0) {
+		std::this_thread::sleep_for(processing_delay_);
+	}
+
 	{
 		std::lock_guard<std::mutex> lock(*work_item.stream_mutex);
 		if (!work_item.stream->Write(result)) {
@@ -173,7 +169,6 @@ void OCRServiceImpl::processWorkItem(const OCRWorkItem& work_item, unsigned int 
 		}
 	}
 
-	// Decrement pending work count for this client
 	if (work_item.pending_work_count) {
 		work_item.pending_work_count->fetch_sub(1);
 	}
@@ -202,10 +197,8 @@ grpc::Status OCRServiceImpl::ProcessImages(grpc::ServerContext* context, grpc::S
 			break;
 		}
 
-		// Increment pending work count
 		pending_work_count->fetch_add(1);
 
-		// Add work item to queue
 		OCRWorkItem work_item;
 		work_item.request = request;
 		work_item.stream = stream;
@@ -225,7 +218,6 @@ grpc::Status OCRServiceImpl::ProcessImages(grpc::ServerContext* context, grpc::S
 
 	std::cout << "Client stream closed, waiting for " << pending_work_count->load() << " remaining items..." << std::endl;
 
-	// Wait for all work items from this client to be processed
 	while (pending_work_count->load() > 0) {
 		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	}
